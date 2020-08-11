@@ -207,7 +207,7 @@ grade:
 # Notify that a lab has been submitted 
 # Provide user, lab #, and commit ID 
 
-handin: #handin-check
+handin: handin-check
 	@echo "Passes all handin checks."
 	@echo "Go to GitHub and create a pull request."
 	@echo "The base should be 'main' branch and compare should be 'lab$(LAB)' branch."
