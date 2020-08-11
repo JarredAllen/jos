@@ -246,9 +246,12 @@ handin: handin-check
                 echo "handin successful!"; \
 	fi
 
-
-
 handin-check:
+	@if test -n "`grep '^     ' */*.[ch]`"; then \
+		grep "^     " */*.[ch]; \
+		echo "You have C files using space indentation instead of tab indentation.  Please fix."; \
+		false; \
+	fi
 	@if ! test -d .git; then \
 		echo No .git directory, is this a git repository?; \
 		false; \
