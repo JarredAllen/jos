@@ -89,6 +89,7 @@ CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O1 -fno-builtin -I$(TOP) -MD
 CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -std=gnu99
 CFLAGS += -static
+CFLAGS += -mno-accumulate-outgoing-args
 CFLAGS += -Wall -Wno-format -Wno-unused -Werror -gstabs -m32
 # -fno-tree-ch prevented gcc from sometimes reordering read_ebp() before
 # mon_backtrace()'s function prologue on gcc version: (Debian 4.7.2-5) 4.7.2
@@ -208,55 +209,27 @@ grade:
 # Provide user, lab #, and commit ID 
 
 handin: handin-check
-	SUF=$(LAB); \
-	if test $(LAB) -eq 3 -o $(LAB) -eq 4; then \
-		read -p "Which part would you like to submit? [a, b, c (c for lab 4 only)]" p; \
-		if test "$$p" != a -a "$$p" != b; then \
-			if test ! $(LAB) -eq 4 -o ! "$$p" = c; then \
-				echo "Bad part \"$$p\""; \
-				exit 1; \
-			fi; \
-		fi; \
-		SUF="$(LAB)$$p"; \
-	fi; \
-	if ! git push ; then \
-		echo ; \
-		echo "Git pushfailed."; \
-		false; \
-	else \
-		commit_id=`git rev-parse --short HEAD`; \
-		repository=`git remote -v | grep origin.*push`; \
-		username=`git config user.name`; \
-		lab="lab$$SUF"; \
-		curl -G \
-			--data-urlencode "value1=$$repository $$username" \
-			--data-urlencode "value2=$$lab" \
-			--data-urlencode "value3=$$commit_id" \
-			"https://maker.ifttt.com/trigger/lab_submitted/with/key/bN1lPH8A7M-VnPM8r3rvXi"; \
-		echo ; \
-		tag="$$lab-submittal"; \
-		                git tag -l "$$tag" | grep -q "$$tag"; \
-                if [ $$? == 0 ]; \
-                then \
-                        git tag --delete "$$tag"; \
-                        git push origin :"$$tag"; \
-                fi; \
-                git tag -a "$$tag" -m "Submital for Lab $$SUF"; \
-                git push origin --tags ;\
-                echo "handin successful!"; \
-	fi
-
-
+	@echo "Passes all handin checks."
+	@echo "Go to GitHub and create a pull request."
+	@echo "The base should be 'main' branch and compare should be 'lab$(LAB)' branch."
+	@echo "Make yourself the assignee and make your instructor the reviewer.  "
+	@echo "The instructor will be notified of your pull request and will make comments."
+	@echo "Eventually, the instructor will approve your pull request. At that point, you can merge it back into the main branch."
 
 handin-check:
+	@if test -n "`grep '^     ' */*.[ch]`"; then \
+		grep "^     " */*.[ch]; \
+		echo "You have C files using space indentation instead of tab indentation.  Please fix."; \
+		false; \
+	fi
 	@if ! test -d .git; then \
-		echo No .git directory, is this a git repository?; \
+		echo "No .git directory, is this a git repository?"; \
 		false; \
 	fi
 	@if test "$$(git symbolic-ref HEAD)" != refs/heads/lab$(LAB); then \
 		git branch; \
-		read -p "You are not on the lab$(LAB) branch.  Hand-in the current branch? [y/N] " r; \
-		test "$$r" = y; \
+		echo "You are not on the lab$(LAB) branch." ; \
+		false; \
 	fi
 	@if ! git diff-files --quiet || ! git diff-index --quiet --cached HEAD; then \
 		git status -s; \
@@ -268,6 +241,11 @@ handin-check:
 		git status -s; \
 		read -p "Untracked files will not be handed in.  Continue? [y/N] " r; \
 		test "$$r" = y; \
+	fi
+	@if `git status --porcelain --branch | grep ahead --quiet`; then \
+		git status; \
+		echo "You have commits in your local repository that aren't present upstream.  Run 'git push' to push those commits upstream."; \
+		false; \
 	fi
 
 
