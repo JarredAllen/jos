@@ -207,14 +207,13 @@ grade:
 # Notify that a lab has been submitted 
 # Provide user, lab #, and commit ID 
 
-handin: handin-check
-	echo "Passes all handin checks".
-	if ! git push ; then \
-		echo ; \
-		echo "Git push failed."; \
-		false; \
-	fi; \
-	echo "Now, go to GitHub and prepare a 
+handin: #handin-check
+	@echo "Passes all handin checks."
+	@echo "Go to GitHub and create a pull request."
+	@echo "The base should be 'main' branch and compare should be 'lab$(LAB)' branch."
+	@echo "Make yourself the assignee and make your instructor the reviewer.  "
+	@echo "The instructor will be notified of your pull request and will make comments."
+	@echo "Eventually, the instructor will approve your pull request. At that point, you can merge it back into the main branch."
 
 handin-check:
 	@if test -n "`grep '^     ' */*.[ch]`"; then \
@@ -247,11 +246,6 @@ handin-check:
 		echo "You have commits in your local repository that aren't present upstream.  Run 'git push' to push those commits upstream."; \
 		false; \
 	fi
-	echo "Go to GitHub and create a pull request."; \
-	echo "The base should be 'main' branch and compare should be 'lab$(LAB)' branch."; \
-	echo "Make yourself the assignee and make your instructor the reviewer.  "; \
-	echo "The instructor will be notified of your pull request and will make comments"; \
-	echo "Eventually, the instructor will approve your pull request. At that point, you can merge it back into the main branch."
 
 
 
