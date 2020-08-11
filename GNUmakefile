@@ -216,7 +216,7 @@ handin: handin-check
 	@echo "The instructor will be notified of your pull request and will make comments."
 	@echo "Eventually, the instructor will approve your pull request. At that point, you can merge it back into the main branch."
 
-handin-check:
+handin-check: grade
 	@if test -n "`grep '^     ' */*.[ch]`"; then \
 		grep "^     " */*.[ch]; \
 		echo "You have C files using space indentation instead of tab indentation.  Please fix."; \
