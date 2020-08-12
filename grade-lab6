@@ -15,21 +15,6 @@ def E(s, trim=False):
                   lambda m: tmpl % (0x1000 + int(m.group(1))-1), s)
 
 @test(5)
-def test_dumbfork():
-    r.user_test("dumbfork")
-    r.match(E(".00000000. new env $E1"),
-            E(".$E1. new env $E2"),
-            "0: I am the parent.",
-            "9: I am the parent.",
-            "0: I am the child.",
-            "9: I am the child.",
-            "19: I am the child.",
-            E(".$E1. exiting gracefully"),
-            E(".$E1. free env $E1"),
-            E(".$E2. exiting gracefully"),
-            E(".$E2. free env $E2"))
-
-@test(5)
 def test_faultread():
     r.user_test("faultread")
     r.match(E(".$E1. user fault va 00000000 ip 008....."),
