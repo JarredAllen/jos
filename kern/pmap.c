@@ -258,7 +258,7 @@ mem_init_mp(void)
 	//             Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	//
-	// LAB 4: Your code here:
+	// LAB 5: Your code here:
 
 }
 
@@ -277,7 +277,7 @@ mem_init_mp(void)
 void
 page_init(void)
 {
-	// LAB 4:
+	// LAB 5:
 	// Change your code to mark the physical page at MPENTRY_PADDR
 	// as in use
 

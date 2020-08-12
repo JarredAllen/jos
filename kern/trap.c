@@ -105,7 +105,7 @@ trap_init_percpu(void)
 	// wrong, you may not get a fault until you try to return from
 	// user space on that CPU.
 	//
-	// LAB 4: Your code here:
+	// LAB 5: Your code here:
 
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
@@ -189,7 +189,7 @@ trap_dispatch(struct Trapframe *tf)
 
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
-	// LAB 4: Your code here.
+	// LAB 5: Your code here.
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
@@ -226,7 +226,7 @@ trap(struct Trapframe *tf)
 		// Trapped from user mode.
 		// Acquire the big kernel lock before doing any
 		// serious kernel work.
-		// LAB 4: Your code here.
+		// LAB 5: Your code here.
 		assert(curenv);
 
 		// Garbage collect if current enviroment is a zombie
@@ -305,7 +305,7 @@ page_fault_handler(struct Trapframe *tf)
 	//   To change what the user environment runs, modify 'curenv->env_tf'
 	//   (the 'tf' variable points at 'curenv->env_tf').
 
-	// LAB 4: Your code here.
+	// LAB 5: Your code here.
 
 	// Destroy the environment that caused the fault.
 	cprintf("[%08x] user fault va %08x ip %08x\n",
