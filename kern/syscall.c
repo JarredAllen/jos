@@ -80,7 +80,7 @@ sys_exofork(void)
 	// from the current environment -- but tweaked so sys_exofork
 	// will appear to return 0.
 
-	// LAB 4: Your code here.
+	// LAB 5: Your code here.
 	panic("sys_exofork not implemented");
 }
 
@@ -100,7 +100,7 @@ sys_env_set_status(envid_t envid, int status)
 	// check whether the current environment has permission to set
 	// envid's status.
 
-	// LAB 4: Your code here.
+	// LAB 5: Your code here.
 	panic("sys_env_set_status not implemented");
 }
 
@@ -131,7 +131,7 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 static int
 sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
-	// LAB 4: Your code here.
+	// LAB 6: Your code here.
 	panic("sys_env_set_pgfault_upcall not implemented");
 }
 
@@ -161,7 +161,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//   If page_insert() fails, remember to free the page you
 	//   allocated!
 
-	// LAB 4: Your code here.
+	// LAB 5: Your code here.
 	panic("sys_page_alloc not implemented");
 }
 
@@ -192,7 +192,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 	//   Use the third argument to page_lookup() to
 	//   check the current permissions on the page.
 
-	// LAB 4: Your code here.
+	// LAB 5: Your code here.
 	panic("sys_page_map not implemented");
 }
 
@@ -208,7 +208,7 @@ sys_page_unmap(envid_t envid, void *va)
 {
 	// Hint: This function is a wrapper around page_remove().
 
-	// LAB 4: Your code here.
+	// LAB 5: Your code here.
 	panic("sys_page_unmap not implemented");
 }
 
@@ -253,7 +253,7 @@ sys_page_unmap(envid_t envid, void *va)
 static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
-	// LAB 4: Your code here.
+	// LAB 7: Your code here.
 	panic("sys_ipc_try_send not implemented");
 }
 
@@ -271,7 +271,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 static int
 sys_ipc_recv(void *dstva)
 {
-	// LAB 4: Your code here.
+	// LAB 7: Your code here.
 	panic("sys_ipc_recv not implemented");
 	return 0;
 }

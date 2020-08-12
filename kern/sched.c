@@ -29,7 +29,7 @@ sched_yield(void)
 	// no runnable environments, simply drop through to the code
 	// below to halt the cpu.
 
-	// LAB 4: Your code here.
+	// LAB 5: Your code here.
 
 	// sched_halt never returns
 	sched_halt();
@@ -75,7 +75,7 @@ sched_halt(void)
 		"movl %0, %%esp\n"
 		"pushl $0\n"
 		"pushl $0\n"
-		// Uncomment the following line after completing exercise 13
+		// Uncomment the following line for exercise 1 in Lab 7
 		//"sti\n"
 		"1:\n"
 		"hlt\n"
