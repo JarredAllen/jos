@@ -116,7 +116,7 @@ mp_main(void)
 	//
 	// Your code here:
 
-	// Remove this after you finish Exercise 6
+	// Remove this when you do Exercise 6 in Lab 5
 	for (;;);
 }
 
