@@ -191,7 +191,7 @@ cga_putc(int c)
 		break;
 	}
 
-	// What is the purpose of this?
+	// move terminal output up when a new line is needed
 	if (crt_pos >= CRT_SIZE) {
 		int i;
 
