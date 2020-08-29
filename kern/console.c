@@ -30,20 +30,20 @@ delay(void)
 #define COM_DLL		0	// Out: Divisor Latch Low (DLAB=1)
 #define COM_DLM		1	// Out: Divisor Latch High (DLAB=1)
 #define COM_IER		1	// Out: Interrupt Enable Register
-#define   COM_IER_RDI	0x01	//   Enable receiver data interrupt
+#define   COM_IER_RDI	0x01	//	 Enable receiver data interrupt
 #define COM_IIR		2	// In:	Interrupt ID Register
 #define COM_FCR		2	// Out: FIFO Control Register
 #define COM_LCR		3	// Out: Line Control Register
-#define	  COM_LCR_DLAB	0x80	//   Divisor latch access bit
-#define	  COM_LCR_WLEN8	0x03	//   Wordlength: 8 bits
+#define	  COM_LCR_DLAB	0x80	//	 Divisor latch access bit
+#define	  COM_LCR_WLEN8	0x03	//	 Wordlength: 8 bits
 #define COM_MCR		4	// Out: Modem Control Register
 #define	  COM_MCR_RTS	0x02	// RTS complement
 #define	  COM_MCR_DTR	0x01	// DTR complement
 #define	  COM_MCR_OUT2	0x08	// Out2 complement
 #define COM_LSR		5	// In:	Line Status Register
-#define   COM_LSR_DATA	0x01	//   Data available
-#define   COM_LSR_TXRDY	0x20	//   Transmit buffer avail
-#define   COM_LSR_TSRE	0x40	//   Transmitter off
+#define   COM_LSR_DATA	0x01	//	 Data available
+#define   COM_LSR_TXRDY	0x20	//	 Transmit buffer avail
+#define   COM_LSR_TSRE	0x40	//	 Transmitter off
 
 static bool serial_exists;
 
@@ -68,8 +68,8 @@ serial_putc(int c)
 	int i;
 
 	for (i = 0;
-	     !(inb(COM1 + COM_LSR) & COM_LSR_TXRDY) && i < 12800;
-	     i++)
+		 !(inb(COM1 + COM_LSR) & COM_LSR_TXRDY) && i < 12800;
+		 i++)
 		delay();
 
 	outb(COM1 + COM_TX, c);
@@ -159,72 +159,72 @@ cga_init(void)
 	crt_buf = (uint16_t*) cp;
 	crt_pos = pos;
 
-    crt_color = 0x0700;
+	crt_color = 0x0700;
 }
 
 static void
 cga_apply_escape_code(void)
 {
-    if (escape_code_buffer < 10) {
-        // text attribute, may add support later
-    } else if (escape_code_buffer >= 30 && escape_code_buffer <= 37) {
-        // foreground color
-        int color_array[] = {0, 4, 2, 14, 1, 5, 3, 15};
-        int color = color_array[escape_code_buffer%10];
-        crt_color &= 0xF000;
-        crt_color |= color << 8;
-    } else if (escape_code_buffer >= 40 && escape_code_buffer <= 47) {
-        // background color
-        int color_array[] = {0, 4, 2, 6, 1, 5, 3, 7};
-        int color = color_array[escape_code_buffer%10];
-        crt_color &= 0x8F00;
-        crt_color |= color << 12;
-    }
+	if (escape_code_buffer < 10) {
+		// text attribute, may add support later
+	} else if (escape_code_buffer >= 30 && escape_code_buffer <= 37) {
+		// foreground color
+		int color_array[] = {0, 4, 2, 14, 1, 5, 3, 15};
+		int color = color_array[escape_code_buffer%10];
+		crt_color &= 0xF000;
+		crt_color |= color << 8;
+	} else if (escape_code_buffer >= 40 && escape_code_buffer <= 47) {
+		// background color
+		int color_array[] = {0, 4, 2, 6, 1, 5, 3, 7};
+		int color = color_array[escape_code_buffer%10];
+		crt_color &= 0x8F00;
+		crt_color |= color << 12;
+	}
 }
 
 static void
 cga_putc(int c)
 {
-    if (escape_read) {
-       if (escape_read == 1) {
-           if (c == '[') {
-               escape_read = 2;
-               escape_code_buffer = 0;
-           } else {
-               escape_read = 0;
-               goto putchar;
-           }
-       } else if (escape_read == 2) {
-            switch (c) {
-                case 'm':
-                    escape_read = 0;
-                case ';':
-                    cga_apply_escape_code();
-                    escape_code_buffer = 0;
-                    break;
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    escape_code_buffer = 10 * escape_code_buffer + c - '0';
-                    break;
-                default:
-                    escape_read = 0;
-                    goto putchar;
-            }
-       }
+	if (escape_read) {
+	   if (escape_read == 1) {
+		   if (c == '[') {
+			   escape_read = 2;
+			   escape_code_buffer = 0;
+		   } else {
+			   escape_read = 0;
+			   goto putchar;
+		   }
+	   } else if (escape_read == 2) {
+			switch (c) {
+				case 'm':
+					escape_read = 0;
+				case ';':
+					cga_apply_escape_code();
+					escape_code_buffer = 0;
+					break;
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					escape_code_buffer = 10 * escape_code_buffer + c - '0';
+					break;
+				default:
+					escape_read = 0;
+					goto putchar;
+			}
+	   }
 
 
-        return;
-    }
+		return;
+	}
 
-    putchar:
+	putchar:
 	// if no attribute given, then use stored attribute
 	if (!(c & ~0xFF))
 		c |= crt_color;
@@ -249,9 +249,9 @@ cga_putc(int c)
 		cons_putc(' ');
 		cons_putc(' ');
 		break;
-        case '\033':
-                escape_read = 1;
-                break;
+		case '\033':
+				escape_read = 1;
+				break;
 	default:
 		crt_buf[crt_pos++] = c;		/* write the character */
 		break;
@@ -308,57 +308,57 @@ static uint8_t togglecode[256] =
 
 static uint8_t normalmap[256] =
 {
-	NO,   0x1B, '1',  '2',  '3',  '4',  '5',  '6',	// 0x00
-	'7',  '8',  '9',  '0',  '-',  '=',  '\b', '\t',
-	'q',  'w',  'e',  'r',  't',  'y',  'u',  'i',	// 0x10
-	'o',  'p',  '[',  ']',  '\n', NO,   'a',  's',
-	'd',  'f',  'g',  'h',  'j',  'k',  'l',  ';',	// 0x20
-	'\'', '`',  NO,   '\\', 'z',  'x',  'c',  'v',
-	'b',  'n',  'm',  ',',  '.',  '/',  NO,   '*',	// 0x30
-	NO,   ' ',  NO,   NO,   NO,   NO,   NO,   NO,
-	NO,   NO,   NO,   NO,   NO,   NO,   NO,   '7',	// 0x40
-	'8',  '9',  '-',  '4',  '5',  '6',  '+',  '1',
-	'2',  '3',  '0',  '.',  NO,   NO,   NO,   NO,	// 0x50
-	[0xC7] = KEY_HOME,	      [0x9C] = '\n' /*KP_Enter*/,
-	[0xB5] = '/' /*KP_Div*/,      [0xC8] = KEY_UP,
-	[0xC9] = KEY_PGUP,	      [0xCB] = KEY_LF,
-	[0xCD] = KEY_RT,	      [0xCF] = KEY_END,
-	[0xD0] = KEY_DN,	      [0xD1] = KEY_PGDN,
-	[0xD2] = KEY_INS,	      [0xD3] = KEY_DEL
+	NO,   0x1B, '1',  '2',	'3',  '4',	'5',  '6',	// 0x00
+	'7',  '8',	'9',  '0',	'-',  '=',	'\b', '\t',
+	'q',  'w',	'e',  'r',	't',  'y',	'u',  'i',	// 0x10
+	'o',  'p',	'[',  ']',	'\n', NO,	'a',  's',
+	'd',  'f',	'g',  'h',	'j',  'k',	'l',  ';',	// 0x20
+	'\'', '`',	NO,   '\\', 'z',  'x',	'c',  'v',
+	'b',  'n',	'm',  ',',	'.',  '/',	NO,   '*',	// 0x30
+	NO,   ' ',	NO,   NO,	NO,   NO,	NO,   NO,
+	NO,   NO,	NO,   NO,	NO,   NO,	NO,   '7',	// 0x40
+	'8',  '9',	'-',  '4',	'5',  '6',	'+',  '1',
+	'2',  '3',	'0',  '.',	NO,   NO,	NO,   NO,	// 0x50
+	[0xC7] = KEY_HOME,		  [0x9C] = '\n' /*KP_Enter*/,
+	[0xB5] = '/' /*KP_Div*/,	  [0xC8] = KEY_UP,
+	[0xC9] = KEY_PGUP,		  [0xCB] = KEY_LF,
+	[0xCD] = KEY_RT,		  [0xCF] = KEY_END,
+	[0xD0] = KEY_DN,		  [0xD1] = KEY_PGDN,
+	[0xD2] = KEY_INS,		  [0xD3] = KEY_DEL
 };
 
 static uint8_t shiftmap[256] =
 {
-	NO,   033,  '!',  '@',  '#',  '$',  '%',  '^',	// 0x00
-	'&',  '*',  '(',  ')',  '_',  '+',  '\b', '\t',
-	'Q',  'W',  'E',  'R',  'T',  'Y',  'U',  'I',	// 0x10
-	'O',  'P',  '{',  '}',  '\n', NO,   'A',  'S',
-	'D',  'F',  'G',  'H',  'J',  'K',  'L',  ':',	// 0x20
-	'"',  '~',  NO,   '|',  'Z',  'X',  'C',  'V',
-	'B',  'N',  'M',  '<',  '>',  '?',  NO,   '*',	// 0x30
-	NO,   ' ',  NO,   NO,   NO,   NO,   NO,   NO,
-	NO,   NO,   NO,   NO,   NO,   NO,   NO,   '7',	// 0x40
-	'8',  '9',  '-',  '4',  '5',  '6',  '+',  '1',
-	'2',  '3',  '0',  '.',  NO,   NO,   NO,   NO,	// 0x50
-	[0xC7] = KEY_HOME,	      [0x9C] = '\n' /*KP_Enter*/,
-	[0xB5] = '/' /*KP_Div*/,      [0xC8] = KEY_UP,
-	[0xC9] = KEY_PGUP,	      [0xCB] = KEY_LF,
-	[0xCD] = KEY_RT,	      [0xCF] = KEY_END,
-	[0xD0] = KEY_DN,	      [0xD1] = KEY_PGDN,
-	[0xD2] = KEY_INS,	      [0xD3] = KEY_DEL
+	NO,   033,	'!',  '@',	'#',  '$',	'%',  '^',	// 0x00
+	'&',  '*',	'(',  ')',	'_',  '+',	'\b', '\t',
+	'Q',  'W',	'E',  'R',	'T',  'Y',	'U',  'I',	// 0x10
+	'O',  'P',	'{',  '}',	'\n', NO,	'A',  'S',
+	'D',  'F',	'G',  'H',	'J',  'K',	'L',  ':',	// 0x20
+	'"',  '~',	NO,   '|',	'Z',  'X',	'C',  'V',
+	'B',  'N',	'M',  '<',	'>',  '?',	NO,   '*',	// 0x30
+	NO,   ' ',	NO,   NO,	NO,   NO,	NO,   NO,
+	NO,   NO,	NO,   NO,	NO,   NO,	NO,   '7',	// 0x40
+	'8',  '9',	'-',  '4',	'5',  '6',	'+',  '1',
+	'2',  '3',	'0',  '.',	NO,   NO,	NO,   NO,	// 0x50
+	[0xC7] = KEY_HOME,		  [0x9C] = '\n' /*KP_Enter*/,
+	[0xB5] = '/' /*KP_Div*/,	  [0xC8] = KEY_UP,
+	[0xC9] = KEY_PGUP,		  [0xCB] = KEY_LF,
+	[0xCD] = KEY_RT,		  [0xCF] = KEY_END,
+	[0xD0] = KEY_DN,		  [0xD1] = KEY_PGDN,
+	[0xD2] = KEY_INS,		  [0xD3] = KEY_DEL
 };
 
 #define C(x) (x - '@')
 
 static uint8_t ctlmap[256] =
 {
-	NO,      NO,      NO,      NO,      NO,      NO,      NO,      NO,
-	NO,      NO,      NO,      NO,      NO,      NO,      NO,      NO,
-	C('Q'),  C('W'),  C('E'),  C('R'),  C('T'),  C('Y'),  C('U'),  C('I'),
-	C('O'),  C('P'),  NO,      NO,      '\r',    NO,      C('A'),  C('S'),
-	C('D'),  C('F'),  C('G'),  C('H'),  C('J'),  C('K'),  C('L'),  NO,
-	NO,      NO,      NO,      C('\\'), C('Z'),  C('X'),  C('C'),  C('V'),
-	C('B'),  C('N'),  C('M'),  NO,      NO,      C('/'),  NO,      NO,
+	NO,		 NO,	  NO,	   NO,		NO,		 NO,	  NO,	   NO,
+	NO,		 NO,	  NO,	   NO,		NO,		 NO,	  NO,	   NO,
+	C('Q'),  C('W'),  C('E'),  C('R'),	C('T'),  C('Y'),  C('U'),  C('I'),
+	C('O'),  C('P'),  NO,	   NO,		'\r',	 NO,	  C('A'),  C('S'),
+	C('D'),  C('F'),  C('G'),  C('H'),	C('J'),  C('K'),  C('L'),  NO,
+	NO,		 NO,	  NO,	   C('\\'), C('Z'),  C('X'),  C('C'),  C('V'),
+	C('B'),  C('N'),  C('M'),  NO,		NO,		 C('/'),  NO,	   NO,
 	[0x97] = KEY_HOME,
 	[0xB5] = C('/'),		[0xC8] = KEY_UP,
 	[0xC9] = KEY_PGUP,		[0xCB] = KEY_LF,
@@ -375,7 +375,7 @@ static uint8_t *charcode[4] = {
 };
 
 /*
- * Get data from the keyboard.  If we finish a character, return it.  Else 0.
+ * Get data from the keyboard.	If we finish a character, return it.  Else 0.
  * Return -1 if no data.
  */
 static int
