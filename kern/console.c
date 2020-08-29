@@ -251,6 +251,7 @@ cga_putc(int c)
 		break;
         case '\033':
                 escape_read = 1;
+                break;
 	default:
 		crt_buf[crt_pos++] = c;		/* write the character */
 		break;

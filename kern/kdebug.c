@@ -177,8 +177,7 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 
     if (lline <= rline) {
 		// stabs[lline] points to the line number
-		// in the string table, but check bounds just in case.
-		info->eip_line = stabs[lline].n_value;
+		info->eip_line = stabs[lline].n_desc;
 	} else {
 		// Couldn't find line number stab!
         return -1;

@@ -38,6 +38,15 @@ i386_init(void)
 	// Test the stack backtrace function (lab 1 only)
 	test_backtrace(5);
 
+        // Testing colors by drawing a rainbow
+        cprintf("[31mr[33ma[32mi[36mn[34mb[35mo[37mw");
+        cprintf("[41m\n");
+        cprintf("[43m\n");
+        cprintf("[42m\n");
+        cprintf("[46m\n");
+        cprintf("[44m\n");
+        cprintf("[45m\n");
+        cprintf("[40;37m\n");
 	// Drop into the kernel monitor.
 	while (1)
 		monitor(NULL);
