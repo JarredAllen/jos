@@ -186,41 +186,39 @@ static void
 cga_putc(int c)
 {
 	if (escape_read) {
-	   if (escape_read == 1) {
-		   if (c == '[') {
-			   escape_read = 2;
-			   escape_code_buffer = 0;
-		   } else {
-			   escape_read = 0;
-			   goto putchar;
-		   }
-	   } else if (escape_read == 2) {
-			switch (c) {
-				case 'm':
-					escape_read = 0;
-				case ';':
-					cga_apply_escape_code();
-					escape_code_buffer = 0;
-					break;
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-					escape_code_buffer = 10 * escape_code_buffer + c - '0';
-					break;
-				default:
-					escape_read = 0;
-					goto putchar;
+		if (escape_read == 1) {
+			if (c == '[') {
+				escape_read = 2;
+				escape_code_buffer = 0;
+			} else {
+				escape_read = 0;
+				goto putchar;
 			}
-	   }
-
-
+		} else if (escape_read == 2) {
+			switch (c) {
+			case 'm':
+				escape_read = 0;
+			case ';':
+				cga_apply_escape_code();
+				escape_code_buffer = 0;
+			break;
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				escape_code_buffer = 10 * escape_code_buffer + c - '0';
+			break;
+			default:
+				escape_read = 0;
+				goto putchar;
+			}
+		}
 		return;
 	}
 
@@ -249,9 +247,9 @@ cga_putc(int c)
 		cons_putc(' ');
 		cons_putc(' ');
 		break;
-		case '\033':
-				escape_read = 1;
-				break;
+	case '\033':
+		escape_read = 1;
+		break;
 	default:
 		crt_buf[crt_pos++] = c;		/* write the character */
 		break;
