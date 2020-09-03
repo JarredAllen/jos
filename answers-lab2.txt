@@ -1,0 +1,3 @@
+Question 1:
+	Variable x should have type uintptr_t, since it is a virtual address,
+	not a physical address.
