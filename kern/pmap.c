@@ -339,22 +339,30 @@ page_decref(struct PageInfo* pp)
 //    - Otherwise, the new page's reference count is incremented,
 //	the page is cleared,
 //	and pgdir_walk returns a pointer into the new page table page.
-//
-// Hint 1: you can turn a PageInfo * into the physical address of the
-// page it refers to with page2pa() from kern/pmap.h.
-//
-// Hint 2: the x86 MMU checks permission bits in both the page directory
-// and the page table, so it's safe to leave permissions in the page
-// directory more permissive than strictly necessary.
-//
-// Hint 3: look at inc/mmu.h for useful macros that manipulate page
-// table and page directory entries.
-//
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	// Fill this function in
-	return NULL;
+	pde_t *pg_table = &pgdir[PDX(va)];
+	
+	if (!(*pg_table & PTE_P)) {
+		if (create) {
+			struct PageInfo *page = page_alloc(ALLOC_ZERO);
+			if (!page) {
+				return NULL;
+			}
+			++page->pp_ref;
+			physaddr_t page_addr = page2pa(page);
+			*pg_table = page_addr | PTE_P | PTE_W | PTE_U;
+		} else {
+			return NULL;
+		}
+	}
+
+	pte_t *page_table = KADDR(PTE_ADDR(*pg_table));
+
+	pte_t *entry = &page_table[PTX(va)];
+
+	return entry;
 }
 
 //
@@ -366,12 +374,12 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 // This function is only intended to set up the ``static'' mappings
 // above UTOP. As such, it should *not* change the pp_ref field on the
 // mapped pages.
-//
-// Hint: the TA solution uses pgdir_walk
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
-	// Fill this function in
+	for (uintptr_t i = 0; i < size; i += PGSIZE) {
+		*pgdir_walk(pgdir, (void *) va+i, 1) = (pa+i) | perm | PTE_P;
+	}
 }
 
 //
@@ -380,7 +388,7 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 // should be set to 'perm|PTE_P'.
 //
 // Requirements
-//   - If there is already a page mapped at 'va', it should be page_remove()d.
+//   - If there is already a page mapped at 'va', it should be page_removed().
 //   - If necessary, on demand, a page table should be allocated and inserted
 //     into 'pgdir'.
 //   - pp->pp_ref should be incremented if the insertion succeeds.
@@ -402,7 +410,15 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
-	// Fill this function in
+	pte_t *entry = pgdir_walk(pgdir, va, 1);
+	if (!entry) {
+		return -E_NO_MEM;
+	}
+	++pp->pp_ref;
+	page_remove(pgdir, va);
+
+	*entry = page2pa(pp) | perm | PTE_P;
+	
 	return 0;
 }
 
@@ -414,14 +430,18 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 // but should not be used by most callers.
 //
 // Return NULL if there is no page mapped at va.
-//
-// Hint: the TA solution uses pgdir_walk and pa2page.
-//
 struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
-	// Fill this function in
-	return NULL;
+	pte_t *entry = pgdir_walk(pgdir, va, 0);
+	if (!entry || !(*entry & PTE_P)) {
+		return NULL;
+	}
+	physaddr_t pa = PTE_ADDR(*entry);
+	if (!pte_store) {
+		*pte_store = entry;
+	}
+	return pa2page(pa);
 }
 
 //
@@ -442,7 +462,14 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-	// Fill this function in
+	pte_t *pte_entry;
+	struct PageInfo *page_info = page_lookup(pgdir, va, &pte_entry);
+	if (!page_info) {
+		return;
+	}
+	page_decref(page_info);
+	*pte_entry = 0;
+	tlb_invalidate(pgdir, va);
 }
 
 //
