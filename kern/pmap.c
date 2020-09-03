@@ -248,19 +248,25 @@ page_init(void)
 	//     page tables and other data structures?
 	// NB: DO NOT actually touch the physical memory corresponding to
 	// free pages!
+	// handle 0 explicitly
+	pages[0].pp_ref = 0;
+	pages[0].pp_link = NULL;
+
 	size_t i;
 	for (i = 1; i < npages; i++) {
+		pages[i].pp_ref = 0;
+
 		physaddr_t page_addr = page2pa(&pages[i]);
-                physaddr_t end_kern_mem = PADDR(boot_alloc(0));
+		physaddr_t end_kern_mem = PADDR(boot_alloc(0));
 		if (page_addr >= IOPHYSMEM && page_addr < end_kern_mem) {
 			// IO hole is right next to extended physical memory
 			// the kernel is loaded into the beginning of extended physical memory
 			// and any memory we use before now ends at boot_alloc(0)
-			continue;
+			pages[i].pp_link = NULL;
+		} else {
+			pages[i].pp_link = page_free_list;
+			page_free_list = &pages[i];
 		}
-		pages[i].pp_ref = 0;
-		pages[i].pp_link = page_free_list;
-		page_free_list = &pages[i];
 	}
 }
 
@@ -274,13 +280,22 @@ page_init(void)
 // page_free can check for double-free bugs.
 //
 // Returns NULL if out of free memory.
-//
-// Hint: use page2kva and memset
 struct PageInfo *
 page_alloc(int alloc_flags)
 {
-	// Fill this function in
-	return 0;
+	struct PageInfo* result = page_free_list;
+
+	if (page_free_list) {
+		// update linked list and page data if a free page exists
+		page_free_list = result->pp_link;
+		result->pp_link = NULL;
+
+		if (ALLOC_ZERO & alloc_flags) {
+			memset(page2kva(result), 0, PGSIZE);
+		}
+	}
+
+	return result;
 }
 
 //
@@ -290,9 +305,16 @@ page_alloc(int alloc_flags)
 void
 page_free(struct PageInfo *pp)
 {
-	// Fill this function in
-	// Hint: You may want to panic if pp->pp_ref is nonzero or
-	// pp->pp_link is not NULL.
+	// sanity checks
+	if (pp->pp_link) {
+		panic("freeing a page with a nonnull link");
+	}
+	if (pp->pp_ref) {
+		panic("freeing a page with existing references");
+	}
+
+	pp->pp_link = page_free_list;
+	page_free_list = pp;
 }
 
 //
