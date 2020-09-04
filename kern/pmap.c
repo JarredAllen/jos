@@ -342,9 +342,9 @@ page_decref(struct PageInfo* pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	pde_t *pg_table = &pgdir[PDX(va)];
+	pde_t *pg_dir_entry = &pgdir[PDX(va)];
 	
-	if (!(*pg_table & PTE_P)) {
+	if (!(*pg_dir_entry & PTE_P)) {
 		if (create) {
 			struct PageInfo *page = page_alloc(ALLOC_ZERO);
 			if (!page) {
@@ -352,13 +352,13 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 			}
 			++page->pp_ref;
 			physaddr_t page_addr = page2pa(page);
-			*pg_table = page_addr | PTE_P | PTE_W | PTE_U;
+			*pg_dir_entry = page_addr | PTE_P | PTE_W | PTE_U;
 		} else {
 			return NULL;
 		}
 	}
 
-	pte_t *page_table = KADDR(PTE_ADDR(*pg_table));
+	pte_t *page_table = KADDR(PTE_ADDR(*pg_dir_entry));
 
 	pte_t *entry = &page_table[PTX(va)];
 
@@ -438,7 +438,7 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 		return NULL;
 	}
 	physaddr_t pa = PTE_ADDR(*entry);
-	if (!pte_store) {
+	if (pte_store) {
 		*pte_store = entry;
 	}
 	return pa2page(pa);
