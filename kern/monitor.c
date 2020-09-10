@@ -160,6 +160,12 @@ mon_chperm(int argc, char **argv, struct Trapframe *tf)
 }
 
 
+int
+mon_exit(int argc, char **argv, struct Trapframe *tf) {
+	return -1;
+}
+
+
 /***** Kernel monitor command interpreter *****/
 
 #define WHITESPACE "\t\r\n "
