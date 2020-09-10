@@ -160,9 +160,43 @@ mon_chperm(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+int
+mon_dump(int argc, char **argv, struct Trapframe *tf)
+{
+	uintptr_t start_va, end_va;
+	if (argc == 2) {
+		// assumes the argument is specified in hex.
+		start_va = strtol(argv[1]+2, NULL, 16);
+		end_va = start_va + 1;
+	}
+	else if (argc == 3) {
+		// assumes the argument is specified in hex.
+		start_va = strtol(argv[1]+2, NULL, 16);
+		end_va = strtol(argv[2]+2, NULL, 16);
+	}
+	else {
+		// complain.
+		cprintf("Usage: dump start_va [end_va]\nHere start_va and end_va are specified in hex.\n");
+		return 1;
+	}
+
+	for (int *curr_word = (int *) start_va; curr_word < (int *) end_va; curr_word += 4) {
+		cprintf("%p:", curr_word);
+		for (int i = 0; i < 4; ++i) {
+			if (curr_word+i >= (int *) end_va) {
+				break;
+			}
+			cprintf(" 0x%08x", curr_word[i]);
+		}
+		cprintf("\n");
+	}
+
+	return 0;
+}
 
 int
-mon_exit(int argc, char **argv, struct Trapframe *tf) {
+mon_exit(int argc, char **argv, struct Trapframe *tf)
+{
 	return -1;
 }
 
