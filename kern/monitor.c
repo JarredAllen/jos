@@ -91,7 +91,7 @@ mon_showmappings(int argc, char **argv, struct Trapframe *tf)
 	}
 	else {
 		// complain.
-		cprintf("Usage: showmappings start_va [end_va]\nHere start_va and end_va are specified in hex.");
+		cprintf("Usage: showmappings start_va [end_va]\nHere start_va and end_va are specified in hex.\n");
 		return 1;
 	}
 
@@ -104,15 +104,15 @@ mon_showmappings(int argc, char **argv, struct Trapframe *tf)
 	for (start_va = ROUNDDOWN(start_va, PGSIZE); start_va <= end_va; start_va += PGSIZE) {
 		pte_t* entry = pgdir_walk(kern_pgdir, (void *) start_va, 0);
 		
-		cprintf("0x%x ", start_va);
+		cprintf("0x%08x ", start_va);
 		if (entry && (*entry & PTE_P)) {
 			// entry is present
-			cprintf("-> 0x%x ", PTE_ADDR(*entry));
+			cprintf("-> 0x%08x ", PTE_ADDR(*entry));
 			// compute flags
 			pde_t dir_entry = kern_pgdir[PDX(start_va)];
 
 			// print out write and user permissions, and accessed and dirty bits
-			cprintf("(%s%s%s%s)", 
+			cprintf("(%s%s%s%s)\n", 
 				(dir_entry & *entry & PTE_W) ? "W":"R",
 				(dir_entry & *entry & PTE_U) ? "U":"K",
 				(*entry & PTE_A) ? "A":"",
