@@ -127,6 +127,37 @@ mon_showmappings(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+int
+mon_chperm(int argc, char **argv, struct Trapframe *tf)
+{
+	if (argc != 3) {
+		cprintf("Usage: chperm va perm\n");
+		cprintf("va is the virtual address in hex.\n");
+		cprintf("Valid permissions are 0 (RK), 1 (WK), 2 (RU), 3 (WU).\n");
+		return 1;
+	}
+	
+	// assumes the argument is specified in hex.
+	uintptr_t va = strtol(argv[1]+2, NULL, 16);
+	uintptr_t permissions = strtol(argv[2], NULL, 4);
+
+	if (permissions < 0 || permissions > 3) {
+		cprintf("permissions not valid.\n");
+		cprintf("Valid permissions are 0 (RK), 1 (WK), 2 (RU), 3 (WU).\n");
+		return 2;
+	}
+
+	pte_t *entry = pgdir_walk(kern_pgdir, (void *) va, 0);
+	if (!entry) {
+		cprintf("page not present\n");
+		return 3;
+	}
+
+	*entry = (*entry & (~0x6 | (permissions << 1))) | (permissions << 1);
+
+	return 0;
+}
+
 
 /***** Kernel monitor command interpreter *****/
 
