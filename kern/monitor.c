@@ -28,6 +28,7 @@ static struct Command commands[] = {
 	{ "backtrace", "Display backtrace", mon_backtrace },
         { "showmappings", "Display physical pages mapped to virtual addresses", mon_showmappings },
         { "chperm", "Change the permissions for a page of virtual memory", mon_chperm },
+        { "exit", "Exit the monitor", mon_exit },
 };
 
 /***** Implementations of basic kernel monitor commands *****/
