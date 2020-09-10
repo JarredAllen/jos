@@ -26,6 +26,7 @@ static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
 	{ "backtrace", "Display backtrace", mon_backtrace },
+        { "showmappings", "Display physical pages mapped to virtual addresses", mon_showmappings },
 };
 
 /***** Implementations of basic kernel monitor commands *****/
