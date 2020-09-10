@@ -9,6 +9,7 @@
 
 #include <kern/console.h>
 #include <kern/monitor.h>
+#include <kern/pmap.h>
 #include <kern/kdebug.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
@@ -74,6 +75,56 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+int
+mon_showmappings(int argc, char **argv, struct Trapframe *tf)
+{
+	uintptr_t start_va, end_va;
+	if (argc == 2) {
+		// assumes the argument is specified in hex.
+		start_va = end_va = strtol(argv[1]+2, NULL, 16);
+	}
+	else if (argc == 3) {
+		// assumes the argument is specified in hex.
+		start_va = strtol(argv[1]+2, NULL, 16);
+		end_va = strtol(argv[2]+2, NULL, 16);
+	}
+	else {
+		// complain.
+		cprintf("Usage: showmappings start_va [end_va]\nHere start_va and end_va are specified in hex.");
+		return 1;
+	}
+
+	// actually do the thing
+	// We want to loop over all possible virtual pages
+	// 	For each entry, we want to look up the corresponding entry.
+	// 	(maybe also get the permissions from the directory entry)
+	// First set up the bounds
+	
+	for (start_va = ROUNDDOWN(start_va, PGSIZE); start_va <= end_va; start_va += PGSIZE) {
+		pte_t* entry = pgdir_walk(kern_pgdir, (void *) start_va, 0);
+		
+		cprintf("0x%x ", start_va);
+		if (entry && (*entry & PTE_P)) {
+			// entry is present
+			cprintf("-> 0x%x ", PTE_ADDR(*entry));
+			// compute flags
+			pde_t dir_entry = kern_pgdir[PDX(start_va)];
+
+			// print out write and user permissions, and accessed and dirty bits
+			cprintf("(%s%s%s%s)", 
+				(dir_entry & *entry & PTE_W) ? "W":"R",
+				(dir_entry & *entry & PTE_U) ? "U":"K",
+				(*entry & PTE_A) ? "A":"",
+				(*entry & PTE_D) ? "D":""
+				);
+		} else {
+			// entry is not present
+			cprintf("not present\n");
+		}
+	}
+
+	return 0;
+}
 
 
 /***** Kernel monitor command interpreter *****/
