@@ -140,7 +140,7 @@ mon_chperm(int argc, char **argv, struct Trapframe *tf)
 	
 	// assumes the argument is specified in hex.
 	uintptr_t va = strtol(argv[1]+2, NULL, 16);
-	uintptr_t permissions = strtol(argv[2], NULL, 4);
+	uintptr_t permissions = strtol(argv[2], NULL, 10);
 
 	if (permissions < 0 || permissions > 3) {
 		cprintf("permissions not valid.\n");
