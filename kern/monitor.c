@@ -27,6 +27,7 @@ static struct Command commands[] = {
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
 	{ "backtrace", "Display backtrace", mon_backtrace },
         { "showmappings", "Display physical pages mapped to virtual addresses", mon_showmappings },
+        { "chperm", "Change the permissions for a page of virtual memory", mon_chperm },
 };
 
 /***** Implementations of basic kernel monitor commands *****/
