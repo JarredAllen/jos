@@ -30,6 +30,8 @@ static struct Command commands[] = {
         { "chperm", "Change the permissions for a page of virtual memory", mon_chperm },
         { "exit", "Exit the monitor", mon_exit },
         { "dump", "Dump the contents of a range of virtual memory addresses", mon_dump },
+        { "dumpp", "Dump the contents of a range of physical memory addresses", mon_dumpp },
+        { "showvas", "Show the virtual addresses that correspond to a given physical address", mon_showvas },
 };
 
 
