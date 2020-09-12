@@ -26,12 +26,12 @@ static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
 	{ "backtrace", "Display backtrace", mon_backtrace },
-        { "showmappings", "Display physical pages mapped to virtual addresses", mon_showmappings },
-        { "chperm", "Change the permissions for a page of virtual memory", mon_chperm },
-        { "exit", "Exit the monitor", mon_exit },
-        { "dump", "Dump the contents of a range of virtual memory addresses", mon_dump },
-        { "dumpp", "Dump the contents of a range of physical memory addresses", mon_dumpp },
-        /* { "showvas", "Show the virtual addresses that correspond to a given physical address", mon_showvas }, */
+	{ "showmappings", "Display physical pages mapped to virtual addresses", mon_showmappings },
+	{ "chperm", "Change the permissions for a page of virtual memory", mon_chperm },
+	{ "exit", "Exit the monitor", mon_exit },
+	{ "dump", "Dump the contents of a range of virtual memory addresses", mon_dump },
+	{ "dumpp", "Dump the contents of a range of physical memory addresses", mon_dumpp },
+	/* { "showvas", "Show the virtual addresses that correspond to a given physical address", mon_showvas }, */
 };
 
 
@@ -262,6 +262,8 @@ mon_exit(int argc, char **argv, struct Trapframe *tf)
 	return -1;
 }
 
+/* Functions which implement small, reusable parts of the commands */
+
 // Writes virtual address that map to the given physical address to the passed array.
 // Returns the number of virtual address found, or -1 if there is not enough space in the array.
 int
@@ -286,6 +288,49 @@ get_virtual_addresses_for_pa(physaddr_t addr, uintptr_t *found_vas, uint32_t fou
 	}
 
 	return num_found_vas;
+}
+
+// Parse the given number and return its value as a long.
+//
+// The number may be of any of the following forms:
+// 0x[0-9A-Fa-f]+ => interpret as hex
+// 0b[01]+        => interpret as binary
+// 0[0-7]*        => interpret as octal
+// [1-9][0-9]*    => interpret as decimal
+//
+// The value pointed to by endpos, if not null, will be assigned to
+// a pointer to the first invalid character in str. If *endpos == 0,
+// then the entire string was valid.
+long
+parse_number(char* str, char** endpos)
+{
+    if (str[0] == 0) {
+        if (endpos) {
+            *endpos = str;
+        }
+        return 0;
+    } else if (str[1] == 0) {
+        long value = (long)(str[0] - '0');
+        if (value > 9 || value < 0) {
+            *endpos = str;
+            return 0;
+        } else {
+            *endpos = str+1;
+            return value;
+        }
+    } else {
+        if (str[0] == '0') {
+            if (str[1] == 'x') {
+                return strtol(str+2, 16, endpos);
+            } else if (str[1] == 'b') {
+                return strtol(str+2, 2, endpos);
+            } else {
+                return strtol(str+1, 8, endpos);
+            }
+        } else {
+            return strtol(str, 10, endpos);
+        }
+    }
 }
 
 /***** Kernel monitor command interpreter *****/
