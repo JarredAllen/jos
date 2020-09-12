@@ -32,6 +32,7 @@ static struct Command commands[] = {
         { "dump", "Dump the contents of a range of virtual memory addresses", mon_dump },
 };
 
+
 /***** Implementations of basic kernel monitor commands *****/
 
 int
@@ -196,11 +197,94 @@ mon_dump(int argc, char **argv, struct Trapframe *tf)
 }
 
 int
+mon_dumpp(int argc, char **argv, struct Trapframe *tf)
+{
+	physaddr_t start_pa, end_pa;
+	if (argc == 2) {
+		// assumes the argument is specified in hex.
+		start_pa = strtol(argv[1]+2, NULL, 16);
+		end_pa = start_pa + 4;
+	}
+	else if (argc == 3) {
+		// assumes the argument is specified in hex.
+		start_pa = strtol(argv[1]+2, NULL, 16);
+		end_pa = strtol(argv[2]+2, NULL, 16);
+	}
+	else {
+		// complain.
+		cprintf("Usage: dumpp start_pa [end_pa]\nHere start_pa and end_pa are specified in hex.\n");
+		return 1;
+	}
+
+	if (start_pa & 0x3 || end_pa & 0x3) {
+		cprintf("start_pa and end_pa must be integer aligned addresses\n");
+		return 2;
+	}
+
+	uint32_t *curr_va;
+	physaddr_t curr_pa;
+	physaddr_t curr_pp = ROUNDDOWN(PGSIZE, start_pa);
+	if (get_virtual_addresses_for_pa(start_pa, &curr_va, 1) == 0) {
+		cprintf("0x%08x: no page mapped, skipping to next page\n", curr_pp);
+		start_pa = curr_pp + PGSIZE;
+	}
+	for (curr_pa = start_pa; curr_pa < end_pa; curr_pa += 16, curr_va += 4) {
+		cprintf("%p:", curr_pa);
+		for (int i = 0; i < 4; ++i) {
+			if (curr_pa + i*4 >= curr_pp + PGSIZE) {
+				// handle page transitions
+				if (get_virtual_addresses_for_pa(curr_pa + i*4, &curr_va, 1) == 0) {
+					if (i) {
+						cprintf("\n0x%08x:", curr_pa + i*4);
+					}
+					cprintf(" no page mapped, skipping to next page");
+					curr_pa += PGSIZE - 16 + i*4;
+					break;
+				}
+				curr_pp = ROUNDDOWN(PGSIZE, curr_pa + i*4);
+			}
+			if (curr_pa+i*4 >= end_pa) {
+				break;
+			}
+			cprintf(" 0x%08x", curr_va[i]);
+		}
+		cprintf("\n");
+	}
+
+	return 0;
+}
+
+int
 mon_exit(int argc, char **argv, struct Trapframe *tf)
 {
 	return -1;
 }
 
+// Writes virtual address that map to the given physical address to the passed array.
+// Returns the number of virtual address found, or -1 if there is not enough space in the array.
+int
+get_virtual_addresses_for_pa(physaddr_t addr, uintptr_t *found_vas, uint32_t found_vas_len)
+{
+	// we do this by walking the page table looking for mappings that point to this pa
+	uint32_t num_found_vas = 0;
+	for (uint32_t pdx = 0; pdx < NPDENTRIES; ++pdx) {
+		if (kern_pgdir[pdx] & PTE_P) {
+			pte_t *curr_pt = (pte_t *) PTE_ADDR(kern_pgdir[pdx]);
+			for (uint32_t ptx = 0; ptx < NPTENTRIES; ++ptx) {
+				if ((curr_pt[ptx] & PTE_P) &
+				    (PTE_ADDR(curr_pt[ptx]) == ROUNDDOWN(PGSIZE, addr))) {
+					if (num_found_vas == found_vas_len) {
+						return -1;
+					}
+
+					found_vas[num_found_vas++] = (uintptr_t) PGADDR(pdx, ptx, addr & 0xFFF);
+				}
+			}
+		}
+	}
+
+	return num_found_vas;
+}
 
 /***** Kernel monitor command interpreter *****/
 
