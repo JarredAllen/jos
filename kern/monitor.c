@@ -31,7 +31,7 @@ static struct Command commands[] = {
         { "exit", "Exit the monitor", mon_exit },
         { "dump", "Dump the contents of a range of virtual memory addresses", mon_dump },
         { "dumpp", "Dump the contents of a range of physical memory addresses", mon_dumpp },
-        { "showvas", "Show the virtual addresses that correspond to a given physical address", mon_showvas },
+        /* { "showvas", "Show the virtual addresses that correspond to a given physical address", mon_showvas }, */
 };
 
 
@@ -225,8 +225,8 @@ mon_dumpp(int argc, char **argv, struct Trapframe *tf)
 
 	uint32_t *curr_va;
 	physaddr_t curr_pa;
-	physaddr_t curr_pp = ROUNDDOWN(PGSIZE, start_pa);
-	if (get_virtual_addresses_for_pa(start_pa, &curr_va, 1) == 0) {
+	physaddr_t curr_pp = ROUNDDOWN(start_pa, PGSIZE);
+	if (get_virtual_addresses_for_pa(start_pa, (uintptr_t *) &curr_va, 1) == 0) {
 		cprintf("0x%08x: no page mapped, skipping to next page\n", curr_pp);
 		start_pa = curr_pp + PGSIZE;
 	}
@@ -235,7 +235,7 @@ mon_dumpp(int argc, char **argv, struct Trapframe *tf)
 		for (int i = 0; i < 4; ++i) {
 			if (curr_pa + i*4 >= curr_pp + PGSIZE) {
 				// handle page transitions
-				if (get_virtual_addresses_for_pa(curr_pa + i*4, &curr_va, 1) == 0) {
+				if (get_virtual_addresses_for_pa(curr_pa + i*4, (uintptr_t *) &curr_va, 1) == 0) {
 					if (i) {
 						cprintf("\n0x%08x:", curr_pa + i*4);
 					}
@@ -243,7 +243,7 @@ mon_dumpp(int argc, char **argv, struct Trapframe *tf)
 					curr_pa += PGSIZE - 16 + i*4;
 					break;
 				}
-				curr_pp = ROUNDDOWN(PGSIZE, curr_pa + i*4);
+				curr_pp = ROUNDDOWN(curr_pa + i*4, PGSIZE);
 			}
 			if (curr_pa+i*4 >= end_pa) {
 				break;
@@ -271,10 +271,10 @@ get_virtual_addresses_for_pa(physaddr_t addr, uintptr_t *found_vas, uint32_t fou
 	uint32_t num_found_vas = 0;
 	for (uint32_t pdx = 0; pdx < NPDENTRIES; ++pdx) {
 		if (kern_pgdir[pdx] & PTE_P) {
-			pte_t *curr_pt = (pte_t *) PTE_ADDR(kern_pgdir[pdx]);
+			pte_t *curr_pt = KADDR(PTE_ADDR(kern_pgdir[pdx]));
 			for (uint32_t ptx = 0; ptx < NPTENTRIES; ++ptx) {
-				if ((curr_pt[ptx] & PTE_P) &
-				    (PTE_ADDR(curr_pt[ptx]) == ROUNDDOWN(PGSIZE, addr))) {
+				if ((curr_pt[ptx] & PTE_P) &&
+				    (PTE_ADDR(curr_pt[ptx]) == ROUNDDOWN(addr, PGSIZE))) {
 					if (num_found_vas == found_vas_len) {
 						return -1;
 					}
