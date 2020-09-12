@@ -304,33 +304,33 @@ get_virtual_addresses_for_pa(physaddr_t addr, uintptr_t *found_vas, uint32_t fou
 long
 parse_number(char* str, char** endpos)
 {
-    if (str[0] == 0) {
-        if (endpos) {
-            *endpos = str;
-        }
-        return 0;
-    } else if (str[1] == 0) {
-        long value = (long)(str[0] - '0');
-        if (value > 9 || value < 0) {
-            *endpos = str;
-            return 0;
-        } else {
-            *endpos = str+1;
-            return value;
-        }
-    } else {
-        if (str[0] == '0') {
-            if (str[1] == 'x') {
-                return strtol(str+2, 16, endpos);
-            } else if (str[1] == 'b') {
-                return strtol(str+2, 2, endpos);
-            } else {
-                return strtol(str+1, 8, endpos);
-            }
-        } else {
-            return strtol(str, 10, endpos);
-        }
-    }
+	if (str[0] == 0) {
+		if (endpos) {
+			*endpos = str;
+		}
+		return 0;
+	} else if (str[1] == 0) {
+		long value = (long)(str[0] - '0');
+		if (value > 9 || value < 0) {
+			*endpos = str;
+			return 0;
+		} else {
+			*endpos = str+1;
+			return value;
+		}
+	} else {
+		if (str[0] == '0') {
+			if (str[1] == 'x') {
+				return strtol(str+2, 16, endpos);
+			} else if (str[1] == 'b') {
+				return strtol(str+2, 2, endpos);
+			} else {
+				return strtol(str+1, 8, endpos);
+			}
+		} else {
+			return strtol(str, 10, endpos);
+		}
+	}
 }
 
 /***** Kernel monitor command interpreter *****/
