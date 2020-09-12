@@ -31,7 +31,7 @@ static struct Command commands[] = {
 	{ "exit", "Exit the monitor", mon_exit },
 	{ "dump", "Dump the contents of a range of virtual memory addresses", mon_dump },
 	{ "dumpp", "Dump the contents of a range of physical memory addresses", mon_dumpp },
-	/* { "showvas", "Show the virtual addresses that correspond to a given physical address", mon_showvas }, */
+	{ "showvas", "Show the virtual addresses that correspond to a given physical address", mon_showvas },
 };
 
 
@@ -87,17 +87,15 @@ mon_showmappings(int argc, char **argv, struct Trapframe *tf)
 {
 	uintptr_t start_va, end_va;
 	if (argc == 2) {
-		// assumes the argument is specified in hex.
-		start_va = end_va = strtol(argv[1]+2, NULL, 16);
+		start_va = end_va = parse_number(argv[1], NULL);
 	}
 	else if (argc == 3) {
-		// assumes the argument is specified in hex.
-		start_va = strtol(argv[1]+2, NULL, 16);
-		end_va = strtol(argv[2]+2, NULL, 16);
+		start_va = parse_number(argv[1], NULL);
+		end_va = parse_number(argv[2], NULL);
 	}
 	else {
 		// complain.
-		cprintf("Usage: showmappings start_va [end_va]\nHere start_va and end_va are specified in hex.\n");
+		cprintf("Usage: showmappings start_va [end_va]\n");
 		return 1;
 	}
 
@@ -138,13 +136,12 @@ mon_chperm(int argc, char **argv, struct Trapframe *tf)
 {
 	if (argc != 3) {
 		cprintf("Usage: chperm va perm\n");
-		cprintf("va is the virtual address in hex.\n");
+		cprintf("va is the virtual address.\n");
 		cprintf("Valid permissions are 0 (RK), 1 (WK), 2 (RU), 3 (WU).\n");
 		return 1;
 	}
 	
-	// assumes the argument is specified in hex.
-	uintptr_t va = strtol(argv[1]+2, NULL, 16);
+	uintptr_t va = parse_number(argv[1], NULL);
 	uintptr_t permissions = strtol(argv[2], NULL, 10);
 
 	if (permissions < 0 || permissions > 3) {
@@ -169,18 +166,16 @@ mon_dump(int argc, char **argv, struct Trapframe *tf)
 {
 	uintptr_t start_va, end_va;
 	if (argc == 2) {
-		// assumes the argument is specified in hex.
-		start_va = strtol(argv[1]+2, NULL, 16);
+		start_va = parse_number(argv[1], NULL);
 		end_va = start_va + 1;
 	}
 	else if (argc == 3) {
-		// assumes the argument is specified in hex.
-		start_va = strtol(argv[1]+2, NULL, 16);
-		end_va = strtol(argv[2]+2, NULL, 16);
+		start_va = parse_number(argv[1], NULL);
+		end_va = parse_number(argv[2], NULL);
 	}
 	else {
 		// complain.
-		cprintf("Usage: dump start_va [end_va]\nHere start_va and end_va are specified in hex.\n");
+		cprintf("Usage: dump start_va [end_va]\n");
 		return 1;
 	}
 
@@ -203,18 +198,16 @@ mon_dumpp(int argc, char **argv, struct Trapframe *tf)
 {
 	physaddr_t start_pa, end_pa;
 	if (argc == 2) {
-		// assumes the argument is specified in hex.
-		start_pa = strtol(argv[1]+2, NULL, 16);
+		start_pa = parse_number(argv[1], NULL);
 		end_pa = start_pa + 4;
 	}
 	else if (argc == 3) {
-		// assumes the argument is specified in hex.
-		start_pa = strtol(argv[1]+2, NULL, 16);
-		end_pa = strtol(argv[2]+2, NULL, 16);
+		start_pa = parse_number(argv[1], NULL);
+		end_pa = parse_number(argv[2], NULL);
 	}
 	else {
 		// complain.
-		cprintf("Usage: dumpp start_pa [end_pa]\nHere start_pa and end_pa are specified in hex.\n");
+		cprintf("Usage: dumpp start_pa [end_pa]\n");
 		return 1;
 	}
 
@@ -251,6 +244,46 @@ mon_dumpp(int argc, char **argv, struct Trapframe *tf)
 			cprintf(" 0x%08x", curr_va[i]);
 		}
 		cprintf("\n");
+	}
+
+	return 0;
+}
+
+int
+mon_showvas(int argc, char **argv, struct Trapframe *tf)
+{
+
+	physaddr_t pa;
+	if (argc == 2) {
+		pa = parse_number(argv[1], NULL);
+	}
+	else {
+		// complain.
+		cprintf("Usage: showvas pa\n");
+		return 1;
+	}
+
+	// 16 is hardcoded value for how many virtual addresses we display.
+	uintptr_t vas[16];
+	int num_found = get_virtual_addresses_for_pa(pa, vas, 16);
+	int limit = (num_found == -1) ? 16 : num_found;
+	
+	for (int i = 0; i < limit; ++i) {
+		pte_t* entry = pgdir_walk(kern_pgdir, (void *) vas[i], 0);
+		// compute flags
+		pde_t dir_entry = kern_pgdir[PDX(vas[i])];
+
+		cprintf("%p ", vas[i]);
+		// print out write and user permissions, and accessed and dirty bits
+		cprintf("(%s%s%s%s)\n", 
+			(dir_entry & *entry & PTE_W) ? "W":"R",
+			(dir_entry & *entry & PTE_U) ? "U":"K",
+			(*entry & PTE_A) ? "A":"",
+			(*entry & PTE_D) ? "D":""
+			);
+	}
+	if (num_found == -1) {
+		cprintf("more mappings not shown, max 16\n");
 	}
 
 	return 0;
@@ -310,25 +343,18 @@ parse_number(char* str, char** endpos)
 		}
 		return 0;
 	} else if (str[1] == 0) {
-		long value = (long)(str[0] - '0');
-		if (value > 9 || value < 0) {
-			*endpos = str;
-			return 0;
-		} else {
-			*endpos = str+1;
-			return value;
-		}
+		return strtol(str, endpos, 10);
 	} else {
 		if (str[0] == '0') {
 			if (str[1] == 'x') {
-				return strtol(str+2, 16, endpos);
+				return strtol(str+2, endpos, 16);
 			} else if (str[1] == 'b') {
-				return strtol(str+2, 2, endpos);
+				return strtol(str+2, endpos, 2);
 			} else {
-				return strtol(str+1, 8, endpos);
+				return strtol(str+1, endpos, 8);
 			}
 		} else {
-			return strtol(str, 10, endpos);
+			return strtol(str, endpos, 10);
 		}
 	}
 }
