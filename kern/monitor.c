@@ -212,7 +212,7 @@ mon_dumpp(int argc, char **argv, struct Trapframe *tf)
 	}
 
 	if (start_pa & 0x3 || end_pa & 0x3) {
-		cprintf("start_pa and end_pa must be integer aligned addresses\n");
+		cprintf("start_pa and end_pa must be integer-aligned addresses\n");
 		return 2;
 	}
 
