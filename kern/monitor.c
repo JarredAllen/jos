@@ -156,7 +156,7 @@ mon_chperm(int argc, char **argv, struct Trapframe *tf)
 		return 3;
 	}
 
-	*entry = (*entry & (~0x6 | (permissions << 1))) | (permissions << 1);
+	*entry = (*entry & ~(PTE_W | PTE_U)) | (permissions << 1);
 
 	return 0;
 }
