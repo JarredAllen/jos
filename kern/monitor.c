@@ -156,7 +156,7 @@ mon_chperm(int argc, char **argv, struct Trapframe *tf)
 		return 3;
 	}
 
-	*entry = (*entry & (~0x6 | (permissions << 1))) | (permissions << 1);
+	*entry = (*entry & ~(PTE_W | PTE_U)) | (permissions << 1);
 
 	return 0;
 }
@@ -212,7 +212,7 @@ mon_dumpp(int argc, char **argv, struct Trapframe *tf)
 	}
 
 	if (start_pa & 0x3 || end_pa & 0x3) {
-		cprintf("start_pa and end_pa must be integer aligned addresses\n");
+		cprintf("start_pa and end_pa must be integer-aligned addresses\n");
 		return 2;
 	}
 
@@ -263,10 +263,10 @@ mon_showvas(int argc, char **argv, struct Trapframe *tf)
 		return 1;
 	}
 
-	// 16 is hardcoded value for how many virtual addresses we display.
-	uintptr_t vas[16];
-	int num_found = get_virtual_addresses_for_pa(pa, vas, 16);
-	int limit = (num_found == -1) ? 16 : num_found;
+	#define NUM_VAS_TO_PRINT 16
+	uintptr_t vas[NUM_VAS_TO_PRINT];
+	int num_found = get_virtual_addresses_for_pa(pa, vas, NUM_VAS_TO_PRINT);
+	int limit = (num_found == -1) ? NUM_VAS_TO_PRINT : num_found;
 	
 	for (int i = 0; i < limit; ++i) {
 		pte_t* entry = pgdir_walk(kern_pgdir, (void *) vas[i], 0);
@@ -283,7 +283,7 @@ mon_showvas(int argc, char **argv, struct Trapframe *tf)
 			);
 	}
 	if (num_found == -1) {
-		cprintf("more mappings not shown, max 16\n");
+		cprintf("more mappings not shown, max %d\n", NUM_VAS_TO_PRINT);
 	}
 
 	return 0;
