@@ -1,0 +1,33 @@
+Question 1:
+	Variable x should have type uintptr_t, since it is a virtual address,
+	not a physical address.
+Question 2:
+	1023 0xFFC00000 Page table for top 4MB of phys memory
+	.
+	.
+	.
+	0961 0xF0400000 page table for more kernel code
+	0960 0xF0000000 page table for the kernel code
+	0959 0xEFC00000 page table for the kernel's stack
+	0957 0xEF400000 the entry that points to the page directory
+	0956 0xEF000000 the entry that points to the page info array
+	below this, all entries should be not present.
+Question 3:
+	The page table permissions prevent code running at user level from
+	accessing the page entries referring to the kernel code.
+Question 4:
+	This operating system can only support 4GB because this the maximum
+	amount that can be addressed.
+Question 5:
+	The overhead is 32MB+272kB.  The 32MB comes from storing the list of
+	PageInfo's for all physical pages, and the 272kB is the kernel's page
+	table.
+Question 6:
+	We transition the EIP at line 68 of entry.S.
+	It is possible to keep running at the low EIP because the page table
+	initially loaded has the virtual address for low memory also mapped to
+	the physical memory of the kernel.
+	This transition is necessary because we want the low address to become
+	the user's space eventually, and the kernel is linked as if it was in
+	high memory.
+
