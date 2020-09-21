@@ -16,12 +16,13 @@ Question 3:
 	The page table permissions prevent code running at user level from
 	accessing the page entries referring to the kernel code.
 Question 4:
-	This operating system can only support 4GB because this the maximum
-	amount that can be addressed.
+	This operating system can only support 256MB, because this is the
+        amount of memory above KERNBASE, and the kernel is unable to access
+        any other part of memory.
 Question 5:
-	The overhead is 32MB+272kB.  The 32MB comes from storing the list of
-	PageInfo's for all physical pages, and the 272kB is the kernel's page
-	table.
+	The overhead is 512kB+272kB.  The 512kB comes from storing the list of
+        PageInfo's for all 64k physical pages (64k pages * 8B), and the 272kB
+        is the kernel's page table, calculated as 4kB(PD)+4kB*64(PTs)=272kB.
 Question 6:
 	We transition the EIP at line 68 of entry.S.
 	It is possible to keep running at the low EIP because the page table
