@@ -184,7 +184,7 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	e->env_pgdir = page2kva(p);
-	memcpy(e->env_pgdir+PDX(UTOP), kern_pgdir+PDX(UTOP), sizeof(pde_t)*(NPDENTRIES - PDX(UTOP)));
+	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
 	++p->pp_ref;
 
 	// UVPT maps the env's own page table read-only.
@@ -267,10 +267,6 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 static void
 region_alloc(struct Env *e, void *va, size_t len)
 {
-	// Hint: It is easier to use region_alloc if the caller can pass
-	//   'va' and 'len' values that are not page-aligned.
-	//   You should round va down, and round (va + len) up.
-	//   (Watch out for corner-cases!)
 	for (void *cur_va = ROUNDDOWN(va, PGSIZE); cur_va < va+len; ++cur_va) {
 		struct PageInfo * pa = page_alloc(0);
 		if (!pa) {
@@ -352,7 +348,10 @@ load_icode(struct Env *e, uint8_t *binary)
 	for (; ph < eph; ++ph) {
 		if (ph->p_type == ELF_PROG_LOAD) {
 			region_alloc(e, (void *) ph->p_va, ph->p_memsz);
-			memcpy((void *) ph->p_va, binary+ph->p_offset, ph->p_memsz);
+			memcpy((void *) ph->p_va, binary+ph->p_offset, ph->p_filesz);
+			for (int i=ph->p_filesz; i < ph->p_memsz; i++) {
+				((uint8_t *) ph->p_va)[i] = 0;
+                        }
 		}
 	}
 	lcr3(cur_pgtable);
@@ -498,11 +497,13 @@ env_run(struct Env *e)
 	//	and make sure you have set the relevant parts of
 	//	e->env_tf to sensible values.
 
-	if (curenv && curenv->env_status == ENV_RUNNING) {
-		curenv->env_status = ENV_RUNNABLE;
+	if (curenv != e) {
+		if (curenv && curenv->env_status == ENV_RUNNING) {
+			curenv->env_status = ENV_RUNNABLE;
+		}
+		curenv = e;
+		curenv->env_type = ENV_RUNNING;
 	}
-	curenv = e;
-	curenv->env_type = ENV_RUNNING;
 	++curenv->env_runs;
 	lcr3(PADDR(curenv->env_pgdir));
 
