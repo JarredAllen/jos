@@ -361,9 +361,8 @@ load_icode(struct Env *e, uint8_t *binary)
 	// at virtual address USTACKTOP - PGSIZE.
 	region_alloc(e, (void *) (USTACKTOP - PGSIZE), PGSIZE);
 
-	// set up stack and instruction pointers
+	// set up the instruction pointer (the stack pointer is setup in env_alloc)
 	e->env_tf.tf_eip = elfhdr->e_entry;
-	e->env_tf.tf_esp = USTACKTOP;
 }
 
 //
