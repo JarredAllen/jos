@@ -349,9 +349,7 @@ load_icode(struct Env *e, uint8_t *binary)
 		if (ph->p_type == ELF_PROG_LOAD) {
 			region_alloc(e, (void *) ph->p_va, ph->p_memsz);
 			memcpy((void *) ph->p_va, binary+ph->p_offset, ph->p_filesz);
-			for (int i=ph->p_filesz; i < ph->p_memsz; i++) {
-				((uint8_t *) ph->p_va)[i] = 0;
-                        }
+			memset((void *) (ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
 		}
 	}
 	lcr3(cur_pgtable);
@@ -491,21 +489,15 @@ env_run(struct Env *e)
 	//	   registers and drop into user mode in the
 	//	   environment.
 
-	// Hint: This function loads the new environment's state from
-	//	e->env_tf.  Go back through the code you wrote above
-	//	and make sure you have set the relevant parts of
-	//	e->env_tf to sensible values.
-
 	if (curenv != e) {
 		if (curenv && curenv->env_status == ENV_RUNNING) {
 			curenv->env_status = ENV_RUNNABLE;
 		}
 		curenv = e;
 		curenv->env_type = ENV_RUNNING;
+		lcr3(PADDR(curenv->env_pgdir));
+		++curenv->env_runs;
 	}
-	++curenv->env_runs;
-	lcr3(PADDR(curenv->env_pgdir));
-
 	env_pop_tf(&e->env_tf);
 }
 
