@@ -99,4 +99,6 @@ end_traphandler_data:
 	mov %eax, %es
 	pushl %esp
 	call trap
+	// This section can't be reached because trap ends by switching
+	// back into the environment, not by returning.
 
