@@ -151,17 +151,38 @@ static void
 trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
-	if (tf->tf_trapno == T_PGFLT) {
+	switch (tf->tf_trapno) {
+	// Handle a page fault
+	case T_PGFLT:
 		page_fault_handler(tf);
-	}
+		break;
+
+	// If a breakpoint trap, drop into the monitor
+	case T_BRKPT:
+		monitor(tf);
+		break;
+
+	// Handle a syscall
+	case T_SYSCALL:
+		tf->tf_regs.reg_eax = syscall(
+			tf->tf_regs.reg_eax,
+			tf->tf_regs.reg_edx,
+			tf->tf_regs.reg_ecx,
+			tf->tf_regs.reg_ebx,
+			tf->tf_regs.reg_edi,
+			tf->tf_regs.reg_esi
+		);
+		break;
 
 	// Unexpected trap: The user process or the kernel has a bug.
-	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT)
-		panic("unhandled trap in kernel");
-	else {
-		env_destroy(curenv);
-		return;
+	default:
+		print_trapframe(tf);
+		if (tf->tf_cs == GD_KT)
+			panic("unhandled trap in kernel");
+		else {
+			env_destroy(curenv);
+			return;
+		}
 	}
 }
 
@@ -182,6 +203,7 @@ trap(struct Trapframe *tf)
 	if ((tf->tf_cs & 3) == 3) {
 		// Trapped from user mode.
 		assert(curenv);
+		assert(curenv->env_status == ENV_RUNNING);
 
 		// Copy trap frame (which is currently on the stack)
 		// into 'curenv->env_tf', so that running the environment

@@ -494,7 +494,7 @@ env_run(struct Env *e)
 			curenv->env_status = ENV_RUNNABLE;
 		}
 		curenv = e;
-		curenv->env_type = ENV_RUNNING;
+		curenv->env_status = ENV_RUNNING;
 		lcr3(PADDR(curenv->env_pgdir));
 		++curenv->env_runs;
 	}
