@@ -128,6 +128,9 @@ lpt_putc(int c)
 static unsigned addr_6845;
 static uint16_t *crt_buf;
 static uint16_t crt_pos;
+static uint16_t crt_color;
+static uint8_t escape_read;
+static int escape_code_buffer;
 
 static void
 cga_init(void)
@@ -155,16 +158,74 @@ cga_init(void)
 
 	crt_buf = (uint16_t*) cp;
 	crt_pos = pos;
+
+	crt_color = 0x0700;
 }
 
-
+static void
+cga_apply_escape_code(void)
+{
+	if (escape_code_buffer < 10) {
+		// text attribute, may add support later
+	} else if (escape_code_buffer >= 30 && escape_code_buffer <= 37) {
+		// foreground color
+		int color_array[] = {0, 4, 2, 14, 1, 5, 3, 15};
+		int color = color_array[escape_code_buffer%10];
+		crt_color &= 0xF000;
+		crt_color |= color << 8;
+	} else if (escape_code_buffer >= 40 && escape_code_buffer <= 47) {
+		// background color
+		int color_array[] = {0, 4, 2, 6, 1, 5, 3, 7};
+		int color = color_array[escape_code_buffer%10];
+		crt_color &= 0x8F00;
+		crt_color |= color << 12;
+	}
+}
 
 static void
 cga_putc(int c)
 {
-	// if no attribute given, then use black on white
+	if (escape_read) {
+		if (escape_read == 1) {
+			if (c == '[') {
+				escape_read = 2;
+				escape_code_buffer = 0;
+			} else {
+				escape_read = 0;
+				goto putchar;
+			}
+		} else if (escape_read == 2) {
+			switch (c) {
+			case 'm':
+				escape_read = 0;
+			case ';':
+				cga_apply_escape_code();
+				escape_code_buffer = 0;
+			break;
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				escape_code_buffer = 10 * escape_code_buffer + c - '0';
+			break;
+			default:
+				escape_read = 0;
+				goto putchar;
+			}
+		}
+		return;
+	}
+
+	putchar:
+	// if no attribute given, then use stored attribute
 	if (!(c & ~0xFF))
-		c |= 0x0700;
+		c |= crt_color;
 
 	switch (c & 0xff) {
 	case '\b':
@@ -186,18 +247,21 @@ cga_putc(int c)
 		cons_putc(' ');
 		cons_putc(' ');
 		break;
+	case '\033':
+		escape_read = 1;
+		break;
 	default:
 		crt_buf[crt_pos++] = c;		/* write the character */
 		break;
 	}
 
-	// What is the purpose of this?
+	// move terminal output up when a new line is needed
 	if (crt_pos >= CRT_SIZE) {
 		int i;
 
 		memmove(crt_buf, crt_buf + CRT_COLS, (CRT_SIZE - CRT_COLS) * sizeof(uint16_t));
 		for (i = CRT_SIZE - CRT_COLS; i < CRT_SIZE; i++)
-			crt_buf[i] = 0x0700 | ' ';
+			crt_buf[i] = crt_color | ' ';
 		crt_pos -= CRT_COLS;
 	}
 
