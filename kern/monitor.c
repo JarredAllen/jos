@@ -33,6 +33,7 @@ static struct Command commands[] = {
 	{ "dump", "Dump the contents of a range of virtual memory addresses", mon_dump },
 	{ "dumpp", "Dump the contents of a range of physical memory addresses", mon_dumpp },
 	{ "showvas", "Show the virtual addresses that correspond to a given physical address", mon_showvas },
+	{ "step", "Step one instruction forward in the program being debugged", mon_step },
 };
 
 
@@ -290,9 +291,23 @@ mon_showvas(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+#define TRAP_FLAG 0x100
+
 int
 mon_exit(int argc, char **argv, struct Trapframe *tf)
 {
+	tf->tf_eflags &= ~TRAP_FLAG;
+	return -1;
+}
+
+int
+mon_step(int argc, char **argv, struct Trapframe *tf)
+{
+	if (!tf) {
+		cprintf("Can't step when not debugging a program.\n");
+		return 0;
+	}
+	tf->tf_eflags |= TRAP_FLAG;
 	return -1;
 }
 

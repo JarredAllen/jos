@@ -157,8 +157,9 @@ trap_dispatch(struct Trapframe *tf)
 		page_fault_handler(tf);
 		break;
 
-	// If a breakpoint trap, drop into the monitor
+	// If a breakpoint or debug trap, drop into the monitor
 	case T_BRKPT:
+	case T_DEBUG:
 		monitor(tf);
 		break;
 

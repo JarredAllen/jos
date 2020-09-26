@@ -21,6 +21,7 @@ int mon_exit(int argc, char **argv, struct Trapframe *tf);
 int mon_dump(int argc, char **argv, struct Trapframe *tf);
 int mon_dumpp(int argc, char **argv, struct Trapframe *tf);
 int mon_showvas(int argc, char **argv, struct Trapframe *tf);
+int mon_step(int argc, char **argv, struct Trapframe *tf);
 
 // Functions which interact with the kernel in ways which are useful for
 // multiple monitor commands
