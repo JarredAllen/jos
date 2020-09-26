@@ -102,3 +102,16 @@ end_traphandler_data:
 	// This section can't be reached because trap ends by switching
 	// back into the environment, not by returning.
 
+
+.globl sysenter_handler
+sysenter_handler:
+	pushl $0
+	pushl %edi
+	pushl %ebx
+	pushl %ecx
+	pushl %edx
+	pushl %eax
+	call syscall
+	movl %esi, %edx
+	movl %ebp, %ecx
+	sysexit

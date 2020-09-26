@@ -60,19 +60,30 @@ static const char *trapname(int trapno)
 
 extern uint32_t traphandler_data;
 extern uint32_t end_traphandler_data;
+extern uint32_t sysenter_handler;
 
 void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 4: Your code here.
-
 	uint32_t *curr_trap = &traphandler_data;
 
 	for (; curr_trap < &end_traphandler_data; curr_trap += 4) {
 		SETGATE(idt[curr_trap[0]], curr_trap[1], GD_KT, curr_trap[2], curr_trap[3]);
 	}
+#define WRMSR(reg_addr, value) asm volatile( \
+		"wrmsr" \
+		: \
+		: "c" ((uint32_t)reg_addr), \
+		  "d" (0), \
+		  "a" ((uint32_t)value) \
+		: \
+	);
+	WRMSR(0x174, GD_KT)
+	WRMSR(0x175, KSTACKTOP)
+	WRMSR(0x176, &sysenter_handler)
+#undef WRMSR
 
 	// Per-CPU setup 
 	trap_init_percpu();

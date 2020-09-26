@@ -522,7 +522,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 		user_mem_check_addr = (uintptr_t)va >= ULIM ? (uintptr_t)va : ULIM;
 		return -E_FAULT;
 	}
-	for (uintptr_t v_addr = ROUNDDOWN((uintptr_t)va, PGSIZE); v_addr < (uintptr_t)+len; v_addr += PGSIZE) {
+	for (uintptr_t v_addr = ROUNDDOWN((uintptr_t)va, PGSIZE); v_addr < (uintptr_t)va+len; v_addr += PGSIZE) {
 		pte_t* entry = pgdir_walk(env->env_pgdir, (void *)v_addr, 0);
 		if (!entry || ((perm | PTE_P) & *entry) != (perm | PTE_P)) {
 			user_mem_check_addr = v_addr;
