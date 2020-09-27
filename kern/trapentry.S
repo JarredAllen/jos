@@ -63,7 +63,7 @@ traphandler_data:
 TRAPHANDLER_NOEC(Trap_Divide, T_DIVIDE, 1, 0)
 TRAPHANDLER_NOEC(Trap_Debug, T_DEBUG, 1, 0)
 TRAPHANDLER_NOEC(Trap_Nmi, T_NMI, 0, 0)
-TRAPHANDLER_NOEC(Trap_Brkpt, T_BRKPT, 1, 0)
+TRAPHANDLER_NOEC(Trap_Brkpt, T_BRKPT, 1, 3)
 TRAPHANDLER_NOEC(Trap_Oflow, T_OFLOW, 1, 0)
 TRAPHANDLER_NOEC(Trap_Bound, T_BOUND, 1, 0)
 TRAPHANDLER_NOEC(Trap_Illop, T_ILLOP, 1, 0)
@@ -79,7 +79,7 @@ TRAPHANDLER     (Trap_Align, T_ALIGN, 1, 0)
 TRAPHANDLER_NOEC(Trap_Mchk, T_MCHK, 1, 0)
 TRAPHANDLER_NOEC(Trap_Simderr, T_SIMDERR, 1, 0)
 
-TRAPHANDLER_NOEC(Trap_Syscall, T_SYSCALL, 0, 1)
+TRAPHANDLER_NOEC(Trap_Syscall, T_SYSCALL, 0, 3)
 TRAPHANDLER_NOEC(Trap_Default, T_DEFAULT, 0, 0)
 
 .data
@@ -102,3 +102,16 @@ end_traphandler_data:
 	// This section can't be reached because trap ends by switching
 	// back into the environment, not by returning.
 
+
+.globl sysenter_handler
+sysenter_handler:
+	pushl $0
+	pushl %edi
+	pushl %ebx
+	pushl %ecx
+	pushl %edx
+	pushl %eax
+	call syscall
+	movl %esi, %edx
+	movl %ebp, %ecx
+	sysexit

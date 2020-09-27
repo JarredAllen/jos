@@ -1,0 +1,9 @@
+Question 3:
+Depending on the row in the IDT, it will generate the breakpoint exception if
+user programs have permission to generate it (the dpl bit is 1), or it will
+generate a general protection fault if it doesn't (the dpl bit is 0).
+
+Question 4:
+The hardware exception interrupts shouldn't be able to be called from user
+programs because the user shouldn't be explicitly choosing to activate the
+page fault handler, or equivalent mechanisms for other faults.
