@@ -256,12 +256,10 @@ mem_init_mp(void)
 	//             Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 
-	cprintf("Entering mem_init_mp (ncpu=%d)...\n", NCPU);
 	for (int i=0; i < NCPU; i++) {
 		uintptr_t kstacktop_i = KSTACKTOP - i*(KSTKSIZE + KSTKGAP);
 		uintptr_t stack_bottom = kstacktop_i - KSTKSIZE;
 		boot_map_region(kern_pgdir, stack_bottom, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
-		cprintf("CPU #%d stack_bottom: 0x%x allocated at 0x%x\n", i, stack_bottom, PADDR(percpu_kstacks[i]));
 	}
 }
 
