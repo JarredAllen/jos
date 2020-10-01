@@ -65,13 +65,32 @@ static const char *trapname(int trapno)
 	return "(unknown trap)";
 }
 
+extern uint32_t traphandler_data;
+extern uint32_t end_traphandler_data;
+extern uint32_t sysenter_handler;
 
 void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 4: Your code here.
+	uint32_t *curr_trap = &traphandler_data;
+
+	for (; curr_trap < &end_traphandler_data; curr_trap += 4) {
+		SETGATE(idt[curr_trap[0]], curr_trap[1], GD_KT, curr_trap[2], curr_trap[3]);
+	}
+#define WRMSR(reg_addr, value) asm volatile( \
+		"wrmsr" \
+		: \
+		: "c" ((uint32_t)reg_addr), \
+		  "d" (0), \
+		  "a" ((uint32_t)value) \
+		: \
+	);
+	WRMSR(0x174, GD_KT)
+	WRMSR(0x175, KSTACKTOP)
+	WRMSR(0x176, &sysenter_handler)
+#undef WRMSR
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -176,7 +195,29 @@ static void
 trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
-	// LAB 3: Your code here.
+	switch (tf->tf_trapno) {
+	// Handle a page fault
+	case T_PGFLT:
+		page_fault_handler(tf);
+		break;
+
+	// If a breakpoint or debug trap, drop into the monitor
+	case T_BRKPT:
+	case T_DEBUG:
+		monitor(tf);
+		break;
+
+	// Handle a syscall
+	case T_SYSCALL:
+		tf->tf_regs.reg_eax = syscall(
+			tf->tf_regs.reg_eax,
+			tf->tf_regs.reg_edx,
+			tf->tf_regs.reg_ecx,
+			tf->tf_regs.reg_ebx,
+			tf->tf_regs.reg_edi,
+			tf->tf_regs.reg_esi
+		);
+		break;
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
@@ -192,12 +233,14 @@ trap_dispatch(struct Trapframe *tf)
 	// LAB 7: Your code here.
 
 	// Unexpected trap: The user process or the kernel has a bug.
-	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT)
-		panic("unhandled trap in kernel");
-	else {
-		env_destroy(curenv);
-		return;
+	default:
+		print_trapframe(tf);
+		if (tf->tf_cs == GD_KT)
+			panic("unhandled trap in kernel");
+		else {
+			env_destroy(curenv);
+			return;
+		}
 	}
 }
 
@@ -228,6 +271,7 @@ trap(struct Trapframe *tf)
 		// serious kernel work.
 		// LAB 5: Your code here.
 		assert(curenv);
+		assert(curenv->env_status == ENV_RUNNING);
 
 		// Garbage collect if current enviroment is a zombie
 		if (curenv->env_status == ENV_DYING) {
@@ -271,7 +315,10 @@ page_fault_handler(struct Trapframe *tf)
 
 	// Handle kernel-mode page faults.
 
-	// LAB 3: Your code here.
+	// If we're in kernel mode when we threw a page fault, panic
+	if (tf->tf_cs == GD_KT) {
+		panic("kernel mode page fault at address 0x%x", fault_va);
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
