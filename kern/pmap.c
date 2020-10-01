@@ -310,6 +310,10 @@ page_init(void)
 			// the kernel is loaded into the beginning of extended physical memory
 			// and any memory we use before now ends at boot_alloc(0)
 			pages[i].pp_link = NULL;
+		} else if (page_addr == MPENTRY_PADDR) {
+			// Don't allocate the MPENTRY_PADDR block
+			pages[i].pp_ref = 0;
+			pages[i].pp_link = NULL;
 		} else {
 			pages[i].pp_link = page_free_list;
 			page_free_list = &pages[i];
@@ -559,11 +563,13 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Be sure to round size up to a multiple of PGSIZE and to
 	// handle if this reservation would overflow MMIOLIM (it's
 	// okay to simply panic if this happens).
-	//
-	// Hint: The staff solution uses boot_map_region.
-	//
-	// Your code here:
-	panic("mmio_map_region not implemented");
+	uintptr_t old_base = base;
+	base += ROUNDUP(size, PGSIZE);
+	if (base > MMIOLIM) {
+		panic("mmio_map_region too much stuff allocated");
+	}
+	boot_map_region(kern_pgdir, old_base, size, pa, PTE_W | PTE_PCD | PTE_PWT);
+	return (void *) old_base;
 }
 
 static uintptr_t user_mem_check_addr;
