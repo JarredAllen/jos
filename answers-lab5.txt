@@ -1,0 +1,8 @@
+Question 1:
+The mpentry.S, because it is run after the kernel loads itself, expects to be
+linked at a high address, inside the kernel's virtual address space, but we
+haven't loaded the page table yet, so it needs to look at the low physical
+address that it actually is until we load the page table.
+boot.S doesn't have this issue because it is linked separately from the rest
+of the kernel, so it doesn't have the same issue, and can be linked at its
+actual physical address.
