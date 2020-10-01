@@ -112,7 +112,7 @@ sysenter_handler:
 	pushl %ecx
 	pushl %edx
 	pushl %eax
-	call syscall
+	call sysenter_syscall
 	movl %esi, %edx
 	movl %ebp, %ecx
 	sysexit

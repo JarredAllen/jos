@@ -77,7 +77,7 @@ sys_cgetc(void)
 int
 sys_env_destroy(envid_t envid)
 {
-	return syscall_via_sysenter(SYS_env_destroy, envid, 0, 0, 0);
+	return syscall(SYS_env_destroy, 0, envid, 0, 0, 0, 0);
 }
 
 envid_t

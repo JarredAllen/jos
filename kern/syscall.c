@@ -8,6 +8,7 @@
 #include <kern/env.h>
 #include <kern/pmap.h>
 #include <kern/trap.h>
+#include <kern/spinlock.h>
 #include <kern/syscall.h>
 #include <kern/console.h>
 #include <kern/sched.h>
@@ -263,13 +264,22 @@ sys_ipc_recv(void *dstva)
 	return 0;
 }
 
+int32_t
+sysenter_syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
+{
+	int retval;
+	lock_kernel();
+	retval = syscall(syscallno, a1, a2, a3, a4, a5);
+	unlock_kernel();
+	return retval;
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
 {
 	// Call the function corresponding to the 'syscallno' parameter.
 	// Return any appropriate return value.
-
 	switch (syscallno) {
 	case SYS_cputs:
 		sys_cputs((char *)a1, a2);
@@ -280,6 +290,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_getenvid();
 	case SYS_env_destroy:
 		return sys_env_destroy(a1);
+	case SYS_yield:
+		sys_yield();
+		return 0;
 	default:
 		return -E_INVAL;
 	}

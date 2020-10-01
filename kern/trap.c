@@ -74,24 +74,6 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	uint32_t *curr_trap = &traphandler_data;
-
-	for (; curr_trap < &end_traphandler_data; curr_trap += 4) {
-		SETGATE(idt[curr_trap[0]], curr_trap[1], GD_KT, curr_trap[2], curr_trap[3]);
-	}
-#define WRMSR(reg_addr, value) asm volatile( \
-		"wrmsr" \
-		: \
-		: "c" ((uint32_t)reg_addr), \
-		  "d" (0), \
-		  "a" ((uint32_t)value) \
-		: \
-	);
-	WRMSR(0x174, GD_KT)
-	WRMSR(0x175, KSTACKTOP)
-	WRMSR(0x176, &sysenter_handler)
-#undef WRMSR
-
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -142,6 +124,24 @@ trap_init_percpu(void)
 
 	// Load the IDT
 	lidt(&idt_pd);
+
+	// Set up sysenter/sysexit for each cpu
+	uint32_t *curr_trap = &traphandler_data;
+	for (; curr_trap < &end_traphandler_data; curr_trap += 4) {
+		SETGATE(idt[curr_trap[0]], curr_trap[1], GD_KT, curr_trap[2], curr_trap[3]);
+	}
+#define WRMSR(reg_addr, value) asm volatile( \
+		"wrmsr" \
+		: \
+		: "c" ((uint32_t)(reg_addr)), \
+		  "d" (0), \
+		  "a" ((uint32_t)(value)) \
+		: \
+	);
+	WRMSR(0x174, GD_KT)
+	WRMSR(0x175, KSTACKTOP - cpunum()*(KSTKSIZE+KSTKGAP))
+	WRMSR(0x176, &sysenter_handler)
+#undef WRMSR
 }
 
 void
@@ -268,7 +268,7 @@ trap(struct Trapframe *tf)
 		// Trapped from user mode.
 		// Acquire the big kernel lock before doing any
 		// serious kernel work.
-		// LAB 5: Your code here.
+		lock_kernel();
 		assert(curenv);
 		assert(curenv->env_status == ENV_RUNNING);
 
