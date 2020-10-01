@@ -12,3 +12,15 @@ Because lock_kernel is a C function, it needs to push a return address onto
 the stack to call it, which requires having a stack it can use. So, although
 it won't get far into the kernel while another process is running, it does get
 far enough to need a stack.
+
+Question 3:
+The pointer e can be dereferenced before and after the lcr3 function is called
+because the kernel's memory maps are included in every enviroment's page
+table, and e points to an address in the kernel, so it will work regardless of
+which table is loaded.
+
+Question 4:
+We need to save the registers to ensure that one environment's state will
+remain unchanged while it isn't running, so that user programs won't have to
+worry about what other programs do.
+The registers are saved on the user's stack.
