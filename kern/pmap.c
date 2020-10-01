@@ -255,9 +255,14 @@ mem_init_mp(void)
 	//             it will fault rather than overwrite another CPU's stack.
 	//             Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
-	//
-	// LAB 5: Your code here:
 
+	cprintf("Entering mem_init_mp (ncpu=%d)...\n", NCPU);
+	for (int i=0; i < NCPU; i++) {
+		uintptr_t kstacktop_i = KSTACKTOP - i*(KSTKSIZE + KSTKGAP);
+		uintptr_t stack_bottom = kstacktop_i - KSTKSIZE;
+		boot_map_region(kern_pgdir, stack_bottom, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+		cprintf("CPU #%d stack_bottom: 0x%x allocated at 0x%x\n", i, stack_bottom, PADDR(percpu_kstacks[i]));
+	}
 }
 
 // --------------------------------------------------------------
@@ -809,9 +814,14 @@ check_kern_pgdir(void)
 	// (updated in lab 4 to check per-CPU kernel stacks)
 	for (n = 0; n < NCPU; n++) {
 		uint32_t base = KSTACKTOP - (KSTKSIZE + KSTKGAP) * (n + 1);
-		for (i = 0; i < KSTKSIZE; i += PGSIZE)
+		for (i = 0; i < KSTKSIZE; i += PGSIZE) {
+			if (check_va2pa(pgdir, base + KSTKGAP + i) != PADDR(percpu_kstacks[n]) + i) {
+				cprintf("Failed at CPU %d stack address 0x%x\n", n, i);
+				cprintf("Should be 0x%x, but is 0x%x\n", PADDR(percpu_kstacks[n]), check_va2pa(pgdir, base + KSTKGAP + i));
+			}
 			assert(check_va2pa(pgdir, base + KSTKGAP + i)
 				== PADDR(percpu_kstacks[n]) + i);
+		}
 		for (i = 0; i < KSTKGAP; i += PGSIZE)
 			assert(check_va2pa(pgdir, base + i) == ~0);
 	}
