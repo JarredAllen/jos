@@ -6,3 +6,9 @@ address that it actually is until we load the page table.
 boot.S doesn't have this issue because it is linked separately from the rest
 of the kernel, so it doesn't have the same issue, and can be linked at its
 actual physical address.
+
+Question 2:
+Because lock_kernel is a C function, it needs to push a return address onto
+the stack to call it, which requires having a stack it can use. So, although
+it won't get far into the kernel while another process is running, it does get
+far enough to need a stack.
