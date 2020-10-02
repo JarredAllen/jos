@@ -95,6 +95,10 @@ end_traphandler_data:
 	pushl %ds
 	pushl %es
 	pushal
+	movl %esp, %eax
+	subl $512, %eax
+	andl $0xFFFFFFF0, %eax
+	fxsave (%eax)
 	mov $GD_KD, %eax
 	mov %eax, %ds
 	mov %eax, %es
