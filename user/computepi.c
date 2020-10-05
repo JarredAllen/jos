@@ -29,13 +29,18 @@ float monte_carlo_pi_approx(int nrounds) {
 }
 
 envid_t dumbfork(void);
+static void print_float(float);
 
 void umain(int argc, char** argv) {
 	for (int i=0; i < 4; i++) {
 		if (dumbfork() == 0) {
 			cprintf("Child number %d\n", i);
-			float pi_approx = monte_carlo_pi_approx(10+2*i);
-			cprintf("[%d] Ended with pi=%f\n", pi_approx);
+			rand_state ^= 65537 * i;
+			float pi_approx = monte_carlo_pi_approx(100+5*i)*4;
+			cprintf("[%d] Ended with pi=", i);
+			print_float(pi_approx);
+			cprintf("\n");
+			return;
 		}
 	}
 }
@@ -96,3 +101,36 @@ dumbfork(void)
 	return envid;
 }
 
+static void print_float_integer_part(float value) {
+	if (value < 1.0) {
+		return;
+	}
+	int digit = (int)value % 10;
+	print_float_integer_part(value / 10.0);
+	cprintf("%d", digit);
+}
+
+static void print_float(float value) {
+	if (value == 0.0) {
+		cprintf("0");
+		return;
+	}
+	if (value < 0.0) {
+		cprintf("-");
+		value *= -1.0;
+	}
+	if (value < 1.0) {
+		cprintf("0");
+	} else {
+		print_float_integer_part(value);
+	}
+	value = value - (int)value;
+	if (value != 0.0) {
+		cprintf(".");
+		while (value > 0.0) {
+			value *= 10.0;
+			cprintf("%d", (int)value);
+			value = value - (int)value;
+		}
+	}
+}
