@@ -29,33 +29,19 @@ sched_yield(void)
 	// below to halt the cpu.
 	
 	int env_to_run = -1;
+	int start_env_id = -1;
 	if (curenv) {
-		int start_env_id = curenv - envs;
-		for (int i=1; i < NENV; i++) {
-			if (envs[(i + start_env_id) % NENV].env_status == ENV_RUNNABLE) {
-				env_to_run = (i + start_env_id) % NENV;
-				break;
-			}
+		start_env_id = curenv - envs;
+	}
+	for (int i=1; i < (start_env_id == -1) ? NENV+1 : NENV; i++) {
+		if (envs[(i + start_env_id) % NENV].env_status == ENV_RUNNABLE || ((envs + (i + start_env_id) % NENV) == curenv && curenv->env_status == ENV_RUNNING)) {
+			env_to_run = (i + start_env_id) % NENV;
+			break;
 		}
-		if (env_to_run == -1) {
-			if (curenv->env_status == ENV_RUNNING) {
-				env_to_run = (curenv - envs);
-			} else {
-				cprintf("Nothing to run...\n");
-				sched_halt();
-			}
-		}
-	} else {
-		for (int i = 0; i < NENV; i++) {
-			if (envs[i].env_status == ENV_RUNNABLE) {
-				env_to_run = i;
-				break;
-			}
-		}
-		if (env_to_run == -1) {
-			cprintf("Nothing to run...\n");
-			sched_halt();
-		}
+	}
+	if (env_to_run == -1) {
+		cprintf("Nothing to run...\n");
+		sched_halt();
 	}
 	env_run(&envs[env_to_run]);
 }
