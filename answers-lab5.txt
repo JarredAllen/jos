@@ -1,0 +1,26 @@
+Question 1:
+The mpentry.S, because it is run after the kernel loads itself, expects to be
+linked at a high address, inside the kernel's virtual address space, but we
+haven't loaded the page table yet, so it needs to look at the low physical
+address that it actually is until we load the page table.
+boot.S doesn't have this issue because it is linked separately from the rest
+of the kernel, so it doesn't have the same issue, and can be linked at its
+actual physical address.
+
+Question 2:
+Because lock_kernel is a C function, it needs to push a return address onto
+the stack to call it, which requires having a stack it can use. So, although
+it won't get far into the kernel while another process is running, it does get
+far enough to need a stack.
+
+Question 3:
+The pointer e can be dereferenced before and after the lcr3 function is called
+because the kernel's memory maps are included in every enviroment's page
+table, and e points to an address in the kernel, so it will work regardless of
+which table is loaded.
+
+Question 4:
+We need to save the registers to ensure that one environment's state will
+remain unchanged while it isn't running, so that user programs won't have to
+worry about what other programs do.
+The registers are saved on the user's stack.
