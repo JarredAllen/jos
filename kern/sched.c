@@ -34,14 +34,19 @@ sched_yield(void)
 		start_env_id = curenv - envs;
 	}
 	for (int i=1; i < NENV+1; i++) {
-		if (envs[(i + start_env_id) % NENV].env_status == ENV_RUNNABLE || ((envs + (i + start_env_id) % NENV) == curenv && curenv->env_status == ENV_RUNNING)) {
+		if (envs[(i + start_env_id) % NENV].env_status == ENV_RUNNABLE) {
 			env_to_run = (i + start_env_id) % NENV;
 			break;
 		}
 	}
 	if (env_to_run == -1) {
-		cprintf("Nothing to run...\n");
-		sched_halt();
+		if (curenv && curenv->env_status == ENV_RUNNING){
+			env_to_run = start_env_id;
+		}
+		else {
+			cprintf("Nothing to run...\n");
+			sched_halt();
+		}
 	}
 	env_run(&envs[env_to_run]);
 }
