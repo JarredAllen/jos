@@ -71,7 +71,7 @@ _pgfault_upcall:
 
 	// Push return address onto trap time stack
 	movl 0x20(%esp), %eax
-	movl 0xc(%esp), %ecx
+	movl 0x28(%esp), %ecx
 	movl %eax, -4(%ecx)
 	
 	// Pop registers:
