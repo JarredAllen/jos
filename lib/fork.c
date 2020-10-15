@@ -32,10 +32,13 @@ pgfault(struct UTrapframe *utf)
 	// copy the data from the old page to the new page, then move the new
 	// page to the old page's address.
 
-	sys_page_alloc(0,PFTEMP,PTE_U|PTE_P|PTE_W);
+	if (sys_page_alloc(0,PFTEMP,PTE_U|PTE_P|PTE_W))
+		panic("cannot allocate pages");
 	memcpy(PFTEMP,ROUNDDOWN(addr,PGSIZE),PGSIZE);
-	sys_page_map(0,PFTEMP,0,ROUNDDOWN(addr,PGSIZE),PTE_U|PTE_P|PTE_W);
-	sys_page_unmap(0,PFTEMP);
+	if (sys_page_map(0,PFTEMP,0,ROUNDDOWN(addr,PGSIZE),PTE_U|PTE_P|PTE_W))
+		panic("cannot map pages");
+	if (sys_page_unmap(0,PFTEMP))
+		panic("cannot map pages");
 }
 
 //
@@ -100,8 +103,8 @@ fork(void)
 				r |= duppage(child, i);
 			}
 		}
-		sys_env_set_pgfault_upcall(child, _pgfault_upcall);
-		sys_env_set_status(child,ENV_RUNNABLE);
+		r |= sys_env_set_pgfault_upcall(child, _pgfault_upcall);
+		r |= sys_env_set_status(child,ENV_RUNNABLE);
 	}
 	else {
 		thisenv = &envs[ENVX(sys_getenvid())];
@@ -110,6 +113,7 @@ fork(void)
 }
 
 // Challenge!
+// 'thisenv' global variable will not work with sfork. Use 'getenvptr()' instead.
 int
 sfork(void)
 {
@@ -134,11 +138,14 @@ sfork(void)
 						  uvpt[i] & PTE_SYSCALL);
 			}
 		}
-		sys_env_set_pgfault_upcall(child, _pgfault_upcall);
-		sys_env_set_status(child,ENV_RUNNABLE);
-	}
-	else {
-		thisenv = &envs[ENVX(sys_getenvid())];
+		r |= sys_env_set_pgfault_upcall(child, _pgfault_upcall);
+		r |= sys_env_set_status(child,ENV_RUNNABLE);
 	}
 	return r ? r : child;
+}
+
+const volatile struct Env *
+getenvptr(void)
+{
+	return &envs[ENVX(sys_getenvid())];
 }

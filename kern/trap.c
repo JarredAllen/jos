@@ -358,7 +358,7 @@ page_fault_handler(struct Trapframe *tf)
 		print_trapframe(tf);
 		env_destroy(curenv);
 	}
-	user_mem_assert(curenv, curenv->env_pgfault_upcall, 1, PTE_U);
+	user_mem_assert(curenv, curenv->env_pgfault_upcall, 4, PTE_U);
 	
 	struct UTrapframe * xenv = (struct UTrapframe *) 
 				   (UXSTACKTOP - sizeof(struct UTrapframe));
@@ -380,8 +380,5 @@ page_fault_handler(struct Trapframe *tf)
 	tf->tf_eip = (uint32_t) curenv->env_pgfault_upcall; 
 
 	env_run(curenv);
-
-	// Destroy the environment that caused the fault.
-	env_destroy(curenv);
 }
 
