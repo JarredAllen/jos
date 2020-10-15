@@ -24,17 +24,21 @@ pgfault(struct UTrapframe *utf)
 	//   Use the read-only page table mappings at uvpt
 	//   (see <inc/memlayout.h>).
 
-	// LAB 5: Your code here.
+	if (!(err & FEC_WR) || !(uvpt[(uintptr_t) addr/PGSIZE] & PTE_COW)){
+		panic("page fault on new fork for va %x", addr);
+	}
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
 	// page to the old page's address.
-	// Hint:
-	//   You should make three system calls.
 
-	// LAB 5: Your code here.
-
-	panic("pgfault not implemented");
+	if (sys_page_alloc(0,PFTEMP,PTE_U|PTE_P|PTE_W))
+		panic("cannot allocate pages");
+	memcpy(PFTEMP,ROUNDDOWN(addr,PGSIZE),PGSIZE);
+	if (sys_page_map(0,PFTEMP,0,ROUNDDOWN(addr,PGSIZE),PTE_U|PTE_P|PTE_W))
+		panic("cannot map pages");
+	if (sys_page_unmap(0,PFTEMP))
+		panic("cannot map pages");
 }
 
 //
@@ -51,14 +55,20 @@ pgfault(struct UTrapframe *utf)
 static int
 duppage(envid_t envid, unsigned pn)
 {
-	int r;
-
-	// LAB 5: Your code here.
-	panic("duppage not implemented");
-	return 0;
+	int r, perm;
+	perm = PTE_U | PTE_P;
+	if (uvpt[pn] & (PTE_W | PTE_COW)){
+		perm |= PTE_COW;
+	}
+	r = sys_page_map(0, (void *) (pn*PGSIZE), envid, (void *) (pn*PGSIZE), perm);
+	r |= sys_page_map(0, (void *) (pn*PGSIZE), 0, (void *) (pn*PGSIZE), perm);
+	
+	return r;
 }
 
-//
+
+extern void _pgfault_upcall(void);
+
 // User-level fork with copy-on-write.
 // Set up our page fault handler appropriately.
 // Create a child.
@@ -77,14 +87,65 @@ duppage(envid_t envid, unsigned pn)
 envid_t
 fork(void)
 {
-	// LAB 5: Your code here.
-	panic("fork not implemented");
+	int r = 0;
+	set_pgfault_handler(pgfault);
+	envid_t child = sys_exofork();
+	if (child < 0)
+		return child;
+	if (child){
+		for (int i = 0; i < NPTENTRIES*NPDENTRIES; i++){
+			if (!(uvpd[i/NPTENTRIES] & PTE_P))
+				continue;
+			if (i*PGSIZE == UXSTACKTOP-PGSIZE){
+				r |= sys_page_alloc(child,(void *) (i*PGSIZE), PTE_U|PTE_P|PTE_W);
+			}
+			else if (uvpt[i] & PTE_P){
+				r |= duppage(child, i);
+			}
+		}
+		r |= sys_env_set_pgfault_upcall(child, _pgfault_upcall);
+		r |= sys_env_set_status(child,ENV_RUNNABLE);
+	}
+	else {
+		thisenv = &envs[ENVX(sys_getenvid())];
+	}
+	return r ? r : child;
 }
 
 // Challenge!
+// 'thisenv' global variable will not work with sfork. Use 'getenvptr()' instead.
 int
 sfork(void)
 {
-	panic("sfork not implemented");
-	return -E_INVAL;
+	int r = 0;
+	set_pgfault_handler(pgfault);
+	envid_t child = sys_exofork();
+	if (child < 0)
+		return child;
+	if (child){
+		for (int i = 0; i < NPTENTRIES*NPDENTRIES; i++){
+			if (!(uvpd[i/NPTENTRIES] & PTE_P))
+				continue;
+			if (i*PGSIZE == UXSTACKTOP-PGSIZE){
+				r |= sys_page_alloc(child,(void *) (i*PGSIZE), PTE_U|PTE_P|PTE_W);
+			}
+			else if (i*PGSIZE == USTACKTOP-PGSIZE){
+				r |= duppage(child, i);
+			}
+			else if (uvpt[i] & PTE_P){
+				r |= sys_page_map(0, (void *) (i*PGSIZE),
+						  child, (void *) (i*PGSIZE), 
+						  uvpt[i] & PTE_SYSCALL);
+			}
+		}
+		r |= sys_env_set_pgfault_upcall(child, _pgfault_upcall);
+		r |= sys_env_set_status(child,ENV_RUNNABLE);
+	}
+	return r ? r : child;
+}
+
+const volatile struct Env *
+getenvptr(void)
+{
+	return &envs[ENVX(sys_getenvid())];
 }
