@@ -1,0 +1,16 @@
+Question 1:
+	First, the trap number would be lost if we had a single trap handler,
+	since the handler for each trap is responsible for pushing the trap
+	number onto the stack.
+	Second, having an individual trap handler allows us to make sure there
+	is always an error code on the stack, even if the processor didn't
+	push an error code, we can put a bogus error code for consistency.
+
+Question 2:
+	We needed to make sure the permissions were setup correctly in trap.c.
+	By setting the permissions on trap 14 (page fault) to level 0, we
+	ensure the user program cannot interrupt to the trap handler for trap
+	14, and instead they get a general protection fault (trap 13).
+	If the user could call the page fault handler, the OS would have to
+	determine why the page fault handler is being called, and spend more
+	time determining if it is safe to map a page.
