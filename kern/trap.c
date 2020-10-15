@@ -229,7 +229,11 @@ trap_dispatch(struct Trapframe *tf)
 
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
-	// LAB 7: Your code here.
+	case IRQ_OFFSET+IRQ_TIMER:
+		cprintf("timer interrupt...\n");
+		lapic_eoi();
+		sched_yield();
+		break;
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	default:
