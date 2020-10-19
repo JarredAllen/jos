@@ -136,4 +136,7 @@ sysenter_handler:
 	call sysenter_syscall
 	movl %esi, %edx
 	movl %ebp, %ecx
+	// sti only allows interrupts after the next instruction, so it will be safe
+	// https://www.felixcloutier.com/x86/sti
+	sti
 	sysexit
