@@ -294,9 +294,41 @@ sys_page_unmap(envid_t envid, void *va)
 //		address space.
 static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
-{
-	// LAB 7: Your code here.
-	panic("sys_ipc_try_send not implemented");
+{	
+	struct Env * recv_env;
+	if (envid2env(envid, &recv_env, 0))
+		return -E_BAD_ENV;
+	if (!recv_env->env_ipc_recving)
+		return -E_IPC_NOT_RECV;
+	if ((uintptr_t) srcva < UTOP){
+		if ((uintptr_t) srcva != ROUNDDOWN((uintptr_t) srcva, PGSIZE))
+			return -E_INVAL;
+		if (((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) || 
+		    ((perm & ~(PTE_P | PTE_U | PTE_W | PTE_AVAIL)))) 
+			return -E_INVAL;
+		pte_t* src_entry;
+		struct PageInfo *page = page_lookup(curenv->env_pgdir, srcva, &src_entry);
+		if (!src_entry)
+			return -E_INVAL;
+		if (!(*src_entry & PTE_P))
+			return -E_INVAL;
+		if (!(*src_entry & PTE_W) && (PTE_W & perm))
+			return -E_INVAL;
+		if ((uintptr_t) recv_env->env_ipc_dstva < UTOP){
+			if (page_insert(recv_env->env_pgdir, page, 
+				recv_env->env_ipc_dstva, perm)) {
+				return -E_NO_MEM;
+			}
+		}
+	}	
+	recv_env->env_ipc_recving = 0;
+	recv_env->env_ipc_from = curenv->env_id;
+	recv_env->env_ipc_value = value;
+	recv_env->env_status = ENV_RUNNABLE;
+	recv_env->env_ipc_perm = ((uintptr_t) srcva < UTOP && 
+				  (uintptr_t) recv_env->env_ipc_dstva < UTOP) ? 
+				 	perm : 0;
+	return 0;
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -312,10 +344,15 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 //	-E_INVAL if dstva < UTOP but dstva is not page-aligned.
 static int
 sys_ipc_recv(void *dstva)
-{
-	// LAB 7: Your code here.
-	panic("sys_ipc_recv not implemented");
-	return 0;
+{	
+	if ((uintptr_t) dstva < UTOP && 
+	    (uintptr_t) dstva != ROUNDDOWN((uintptr_t) dstva, PGSIZE))
+		return -E_INVAL;
+
+	curenv->env_ipc_dstva = dstva;
+	curenv->env_ipc_recving = 1;
+	curenv->env_status = ENV_NOT_RUNNABLE;
+	sched_yield();
 }
 
 int32_t

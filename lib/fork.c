@@ -93,7 +93,7 @@ fork(void)
 	if (child < 0)
 		return child;
 	if (child){
-		for (int i = 0; i < NPTENTRIES*NPDENTRIES; i++){
+		for (int i = 0; i < UTOP/PGSIZE; i++){
 			if (!(uvpd[i/NPTENTRIES] & PTE_P))
 				continue;
 			if (i*PGSIZE == UXSTACKTOP-PGSIZE){
