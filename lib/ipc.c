@@ -29,12 +29,28 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 			* perm_store = 0;
 		return -E_INVAL;
 	}
+	const volatile struct Env * myenv = getenvptr();
 	if (from_env_store)
-		* from_env_store = thisenv->env_ipc_from;
+		* from_env_store = myenv->env_ipc_from;
 	if (perm_store)
-		* perm_store = thisenv->env_ipc_perm;
-	return thisenv->env_ipc_value;
+		* perm_store = myenv->env_ipc_perm;
+	return myenv->env_ipc_value;
 }
+
+int32_t
+ipc_recv_from(envid_t fromenv, void *pg, int *perm_store)
+{
+	if (sys_ipc_recv_from(fromenv, pg ? pg : (void *) UTOP)) {
+		if (perm_store)
+			* perm_store = 0;
+		return -E_INVAL;
+	}
+	const volatile struct Env * myenv = getenvptr();
+	if (perm_store)
+		* perm_store = myenv->env_ipc_perm;
+	return myenv->env_ipc_value;
+}
+
 
 // Send 'val' (and 'pg' with 'perm', if 'pg' is nonnull) to 'toenv'.
 // This function keeps trying until it succeeds.
@@ -53,7 +69,8 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 		ret = sys_ipc_try_send(to_env, val, (pg ? pg : (void *) UTOP), perm); 
 	}
 	if (ret)
-		panic("IPC send failed unexpectedly with %e", ret);
+		panic("IPC send to %x failed unexpectedly with %e", to_env, ret);
+	
 }
 
 // Find the first environment of the given type.  We'll use this to

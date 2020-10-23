@@ -300,6 +300,8 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		return -E_BAD_ENV;
 	if (!recv_env->env_ipc_recving)
 		return -E_IPC_NOT_RECV;
+	if (recv_env->env_ipc_from != 0 && recv_env->env_ipc_from != curenv->env_id)	
+		return -E_IPC_NOT_RECV;
 	if ((uintptr_t) srcva < UTOP){
 		if ((uintptr_t) srcva != ROUNDDOWN((uintptr_t) srcva, PGSIZE))
 			return -E_INVAL;
@@ -353,6 +355,22 @@ sys_ipc_recv(void *dstva)
 	curenv->env_ipc_recving = 1;
 	curenv->env_status = ENV_NOT_RUNNABLE;
 	curenv->env_tf.tf_regs.reg_eax = 0;
+	curenv->env_ipc_from = 0;
+	sched_yield();
+}
+
+static int
+sys_ipc_recv_from(envid_t fromenv, void *dstva)
+{	
+	if ((uintptr_t) dstva < UTOP && 
+	    (uintptr_t) dstva != ROUNDDOWN((uintptr_t) dstva, PGSIZE))
+		return -E_INVAL;
+
+	curenv->env_ipc_dstva = dstva;
+	curenv->env_ipc_recving = 1;
+	curenv->env_status = ENV_NOT_RUNNABLE;
+	curenv->env_tf.tf_regs.reg_eax = 0;
+	curenv->env_ipc_from = fromenv;
 	sched_yield();
 }
 
@@ -384,6 +402,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_env_destroy(a1);
 	case SYS_ipc_recv:
 		return sys_ipc_recv((void *) a1);
+	case SYS_ipc_recv_from:
+		return sys_ipc_recv_from(a1, (void *) a2);
 	case SYS_ipc_try_send:
 		return sys_ipc_try_send(a1, a2, (void *) a3, a4);
 	case SYS_yield:
