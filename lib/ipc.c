@@ -24,16 +24,16 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
 	if (sys_ipc_recv(pg ? pg : (void *) UTOP)) {
 		if (from_env_store)
-			* from_env_store = 0;
+			*from_env_store = 0;
 		if (perm_store)
-			* perm_store = 0;
+			*perm_store = 0;
 		return -E_INVAL;
 	}
 	const volatile struct Env * myenv = getenvptr();
 	if (from_env_store)
-		* from_env_store = myenv->env_ipc_from;
+		*from_env_store = myenv->env_ipc_from;
 	if (perm_store)
-		* perm_store = myenv->env_ipc_perm;
+		*perm_store = myenv->env_ipc_perm;
 	return myenv->env_ipc_value;
 }
 
@@ -42,12 +42,12 @@ ipc_recv_from(envid_t fromenv, void *pg, int *perm_store)
 {
 	if (sys_ipc_recv_from(fromenv, pg ? pg : (void *) UTOP)) {
 		if (perm_store)
-			* perm_store = 0;
+			*perm_store = 0;
 		return -E_INVAL;
 	}
 	const volatile struct Env * myenv = getenvptr();
 	if (perm_store)
-		* perm_store = myenv->env_ipc_perm;
+		*perm_store = myenv->env_ipc_perm;
 	return myenv->env_ipc_value;
 }
 
