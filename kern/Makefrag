@@ -55,7 +55,8 @@ KERN_BINFILES :=	user/hello \
 			user/faultread \
 			user/faultreadkernel \
 			user/faultwrite \
-			user/faultwritekernel
+			user/faultwritekernel \
+			user/computepi
 
 # Binary files for LAB4
 KERN_BINFILES +=	user/idle \
@@ -70,6 +71,7 @@ KERN_BINFILES +=	user/idle \
 			user/faultbadhandler \
 			user/faultevilhandler \
 			user/forktree \
+			user/matrixmult \
 			user/sendpage \
 			user/spin \
 			user/fairness \
