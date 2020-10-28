@@ -135,3 +135,9 @@ sys_ipc_recv(void *dstva)
 {
 	return syscall(SYS_ipc_recv, 1, (uint32_t)dstva, 0, 0, 0, 0);
 }
+
+int
+sys_ipc_recv_from(envid_t fromenv, void *dstva)
+{
+	return syscall(SYS_ipc_recv_from, 1, fromenv, (uint32_t)dstva, 0, 0, 0);
+}

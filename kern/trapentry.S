@@ -61,24 +61,41 @@
 traphandler_data:
 .text
 
-TRAPHANDLER_NOEC(Trap_Divide, T_DIVIDE, 1, 0)
-TRAPHANDLER_NOEC(Trap_Debug, T_DEBUG, 1, 0)
+TRAPHANDLER_NOEC(Trap_Divide, T_DIVIDE, 0, 0)
+TRAPHANDLER_NOEC(Trap_Debug, T_DEBUG, 0, 0)
 TRAPHANDLER_NOEC(Trap_Nmi, T_NMI, 0, 0)
-TRAPHANDLER_NOEC(Trap_Brkpt, T_BRKPT, 1, 3)
-TRAPHANDLER_NOEC(Trap_Oflow, T_OFLOW, 1, 0)
-TRAPHANDLER_NOEC(Trap_Bound, T_BOUND, 1, 0)
-TRAPHANDLER_NOEC(Trap_Illop, T_ILLOP, 1, 0)
-TRAPHANDLER_NOEC(Trap_Device, T_DEVICE, 1, 0)
-TRAPHANDLER     (Trap_Dblflt, T_DBLFLT, 1, 0)
-TRAPHANDLER     (Trap_Tss, T_TSS, 1, 0)
-TRAPHANDLER     (Trap_Segnp, T_SEGNP, 1, 0)
-TRAPHANDLER     (Trap_Stack, T_STACK, 1, 0)
-TRAPHANDLER     (Trap_Gpflt, T_GPFLT, 1, 0)
-TRAPHANDLER     (Trap_Pgflt, T_PGFLT, 1, 0)
-TRAPHANDLER_NOEC(Trap_Fperr, T_FPERR, 1, 0)
-TRAPHANDLER     (Trap_Align, T_ALIGN, 1, 0)
-TRAPHANDLER_NOEC(Trap_Mchk, T_MCHK, 1, 0)
-TRAPHANDLER_NOEC(Trap_Simderr, T_SIMDERR, 1, 0)
+TRAPHANDLER_NOEC(Trap_Brkpt, T_BRKPT, 0, 3)
+TRAPHANDLER_NOEC(Trap_Oflow, T_OFLOW, 0, 0)
+TRAPHANDLER_NOEC(Trap_Bound, T_BOUND, 0, 0)
+TRAPHANDLER_NOEC(Trap_Illop, T_ILLOP, 0, 0)
+TRAPHANDLER_NOEC(Trap_Device, T_DEVICE, 0, 0)
+TRAPHANDLER     (Trap_Dblflt, T_DBLFLT, 0, 0)
+TRAPHANDLER     (Trap_Tss, T_TSS, 0, 0)
+TRAPHANDLER     (Trap_Segnp, T_SEGNP, 0, 0)
+TRAPHANDLER     (Trap_Stack, T_STACK, 0, 0)
+TRAPHANDLER     (Trap_Gpflt, T_GPFLT, 0, 0)
+TRAPHANDLER     (Trap_Pgflt, T_PGFLT, 0, 0)
+TRAPHANDLER_NOEC(Trap_Fperr, T_FPERR, 0, 0)
+TRAPHANDLER     (Trap_Align, T_ALIGN, 0, 0)
+TRAPHANDLER_NOEC(Trap_Mchk, T_MCHK, 0, 0)
+TRAPHANDLER_NOEC(Trap_Simderr, T_SIMDERR, 0, 0)
+
+TRAPHANDLER_NOEC(Irq_Timer,    IRQ_OFFSET + IRQ_TIMER,    0, 0)
+TRAPHANDLER_NOEC(Irq_Kbd,      IRQ_OFFSET + IRQ_KBD,      0, 0)
+TRAPHANDLER_NOEC(Irq_Two,      IRQ_OFFSET + 2,            0, 0)
+TRAPHANDLER_NOEC(Irq_Three,    IRQ_OFFSET + 3,            0, 0)
+TRAPHANDLER_NOEC(Irq_Serial,   IRQ_OFFSET + IRQ_SERIAL,   0, 0) 
+TRAPHANDLER_NOEC(Irq_Five,     IRQ_OFFSET + 5,            0, 0)
+TRAPHANDLER_NOEC(Irq_Six,      IRQ_OFFSET + 6,            0, 0)
+TRAPHANDLER_NOEC(Irq_Spurious, IRQ_OFFSET + IRQ_SPURIOUS, 0, 0)
+TRAPHANDLER_NOEC(Irq_Eight,    IRQ_OFFSET + 8,            0, 0)
+TRAPHANDLER_NOEC(Irq_Nine,     IRQ_OFFSET + 9,            0, 0)
+TRAPHANDLER_NOEC(Irq_Ten,      IRQ_OFFSET + 10,           0, 0)
+TRAPHANDLER_NOEC(Irq_Eleven,   IRQ_OFFSET + 11,           0, 0)
+TRAPHANDLER_NOEC(Irq_Twelve,   IRQ_OFFSET + 12,           0, 0)
+TRAPHANDLER_NOEC(Irq_Thirteen, IRQ_OFFSET + 13,           0, 0)
+TRAPHANDLER_NOEC(Irq_Ide,      IRQ_OFFSET + IRQ_IDE,      0, 0)
+TRAPHANDLER_NOEC(Irq_Fifteen,  IRQ_OFFSET + 15,           0, 0)
 
 TRAPHANDLER_NOEC(Trap_Syscall, T_SYSCALL, 0, 3)
 TRAPHANDLER_NOEC(Trap_Default, T_DEFAULT, 0, 0)
@@ -119,4 +136,7 @@ sysenter_handler:
 	call sysenter_syscall
 	movl %esi, %edx
 	movl %ebp, %ecx
+	// sti only allows interrupts after the next instruction, so it will be safe
+	// https://www.felixcloutier.com/x86/sti
+	sti
 	sysexit
