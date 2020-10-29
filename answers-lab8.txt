@@ -1,0 +1,3 @@
+Question 1:
+The IOPL is stored in EFLAGS, so it is automatically saved on an interrupt and
+then restored on an iret.
