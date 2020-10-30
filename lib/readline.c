@@ -25,10 +25,15 @@ readline(const char *prompt)
 			if (c != -E_EOF)
 				cprintf("read error: %e\n", c);
 			return NULL;
-		} else if ((c == '\b' || c == '\x7f') && i > 0) {
-			if (echoing)
-				cputchar('\b');
-			i--;
+		} else if (c == '\b' || c == '\x7f') {
+			if (i > 0) {
+				if (echoing) {
+					cputchar('\b');
+					cputchar(' ');
+					cputchar('\b');
+				}
+				i--;
+			}
 		} else if (c >= ' ' && i < BUFLEN-1) {
 			if (echoing)
 				cputchar(c);
@@ -38,6 +43,42 @@ readline(const char *prompt)
 				cputchar('\n');
 			buf[i] = 0;
 			return buf;
+		} else if (c == '\033') {
+			c = getchar();
+			if (c == '[') {
+				c = getchar();
+				switch (c) {
+				case 'D':
+					if (i > 0) {
+						i--;
+						cputchar('\b');
+					}
+				break;
+				case 'C':
+					if (buf[i]) {
+						cputchar(buf[i++]);
+					}
+				break;
+				case 'A':
+					while (i--) {
+						cputchar('\b');
+						cputchar(' ');
+						cputchar('\b');
+					}
+					while (buf[++i]) {
+						cputchar(buf[i]);
+					}
+				break;
+				case 'B':
+					while (i--) {
+						cputchar('\b');
+						cputchar(' ');
+						cputchar('\b');
+					}
+					i = 0;
+				break;
+				}
+			}
 		}
 	}
 }
