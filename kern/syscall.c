@@ -190,7 +190,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	if (((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) || ((perm & ~(PTE_P | PTE_U | PTE_W | PTE_AVAIL)))) {
 		return -E_INVAL;
 	}
-	struct PageInfo *page = page_alloc(0);
+	struct PageInfo *page = page_alloc(ALLOC_ZERO);
 	if (!page) {
 		return -E_NO_MEM;
 	}
