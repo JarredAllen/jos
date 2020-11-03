@@ -44,9 +44,6 @@ bc_pgfault(struct UTrapframe *utf)
 
 	// Allocate a page in the disk map region, read the contents
 	// of the block from the disk into that page.
-	// Hint: first round addr to page boundary. fs/ide.c has code to read
-	// the disk.
-	//
 	void *page_addr = ROUNDDOWN(addr, PGSIZE);
 	sys_page_alloc(0, page_addr, PTE_U | PTE_P | PTE_W);
 	ide_read(blockno * BLKSIZE/SECTSIZE, page_addr, BLKSIZE/SECTSIZE);

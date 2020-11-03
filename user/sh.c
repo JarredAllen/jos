@@ -44,7 +44,7 @@ again:
 			// Grab the filename from the argument list
 			if (gettoken(0, &t) != 'w') {
 				cprintf("syntax error: < not followed by word\n");
-			exit();
+				exit();
 			}
 			// Open 't' for reading as file descriptor 0
 			// (which environments use as standard input).
