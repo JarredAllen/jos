@@ -60,6 +60,10 @@ duppage(envid_t envid, unsigned pn)
 	if (uvpt[pn] & (PTE_W | PTE_COW)){
 		perm |= PTE_COW;
 	}
+	if (uvpt[pn] & PTE_SHARE) {
+		// If page is marked as share, then don't make it copy-on-write
+		perm = uvpt[pn] & PTE_SYSCALL;
+	}
 	r = sys_page_map(0, (void *) (pn*PGSIZE), envid, (void *) (pn*PGSIZE), perm);
 	r |= sys_page_map(0, (void *) (pn*PGSIZE), 0, (void *) (pn*PGSIZE), perm);
 	
