@@ -6,7 +6,7 @@
 
 void * e1000_BAR0;
 
-#define E_REG(offset) (*(int *) (e1000_BAR0 + (offset)))
+#define E_REG(offset) (*(uint32_t *) (e1000_BAR0 + (offset)))
 
 int
 attach_e1000(struct pci_func * pcif)
