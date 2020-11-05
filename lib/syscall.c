@@ -4,6 +4,31 @@
 #include <inc/lib.h>
 
 static inline int32_t
+syscall_via_sysenter(int num, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4) {
+	int32_t ret;
+	asm volatile(
+		// Assembly code
+		"pushl %%ebp;"
+		 "movl %%esp, %%ebp;"
+		 "movl $8, %%esi;"
+		 "addl $., %%esi;"
+		 "sysenter;"
+		 "popl %%ebp;"
+		// Output operands
+		: "=a" (ret)
+		// Input operands
+		: "a" (num),
+		  "d" (a1),
+		  "c" (a2),
+		  "b" (a3),
+		  "D" (a4)
+		// Clobbered registers
+		: "cc", "memory", "esi"
+	);
+	return ret;
+}
+
+static inline int32_t
 syscall(int num, int check, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
 {
 	int32_t ret;
@@ -40,25 +65,25 @@ syscall(int num, int check, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 void
 sys_cputs(const char *s, size_t len)
 {
-	syscall(SYS_cputs, 0, (uint32_t)s, len, 0, 0, 0);
+	syscall_via_sysenter(SYS_cputs, (uint32_t)s, len, 0, 0);
 }
 
 int
 sys_cgetc(void)
 {
-	return syscall(SYS_cgetc, 0, 0, 0, 0, 0, 0);
+	return syscall_via_sysenter(SYS_cgetc, 0, 0, 0, 0);
 }
 
 int
 sys_env_destroy(envid_t envid)
 {
-	return syscall(SYS_env_destroy, 1, envid, 0, 0, 0, 0);
+	return syscall(SYS_env_destroy, 0, envid, 0, 0, 0, 0);
 }
 
 envid_t
 sys_getenvid(void)
 {
-	 return syscall(SYS_getenvid, 0, 0, 0, 0, 0, 0);
+	return syscall_via_sysenter(SYS_getenvid, 0, 0, 0, 0);
 }
 
 void
@@ -116,6 +141,11 @@ sys_ipc_recv(void *dstva)
 {
 	return syscall(SYS_ipc_recv, 1, (uint32_t)dstva, 0, 0, 0, 0);
 }
+
+int
+sys_ipc_recv_from(envid_t fromenv, void *dstva)
+{
+	return syscall(SYS_ipc_recv_from, 1, fromenv, (uint32_t)dstva, 0, 0, 0);
 
 unsigned int
 sys_time_msec(void)

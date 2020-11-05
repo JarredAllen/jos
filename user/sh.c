@@ -54,8 +54,11 @@ again:
 			// If not, dup 'fd' onto file descriptor 0,
 			// then close the original 'fd'.
 
-			// LAB 5: Your code here.
-			panic("< redirection not implemented");
+			int fd = open(t, O_RDONLY);
+			if (fd > 0) {
+				dup(fd, 0);
+				close(fd);
+			}
 			break;
 
 		case '>':	// Output redirection
@@ -219,10 +222,20 @@ _gettoken(char *s, char **p1, char **p2)
 			cprintf("TOK %c\n", t);
 		return t;
 	}
-	*p1 = s;
-	while (*s && !strchr(WHITESPACE SYMBOLS, *s))
+	if (*s == '"') {
 		s++;
-	*p2 = s;
+		*p1 = s;
+		while (*s && *s != '"')
+			s++;
+		*p2 = s;
+		// Set it to a space so that it gets skipped by this pass and the next
+		*s = ' ';
+	} else {
+		*p1 = s;
+		while (*s && !strchr(WHITESPACE SYMBOLS, *s))
+			s++;
+		*p2 = s;
+	}
 	if (debug > 1) {
 		t = **p2;
 		**p2 = 0;

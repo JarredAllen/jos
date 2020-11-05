@@ -59,6 +59,7 @@ int	sys_page_map(envid_t src_env, void *src_pg,
 int	sys_page_unmap(envid_t env, void *pg);
 int	sys_ipc_try_send(envid_t to_env, uint32_t value, void *pg, int perm);
 int	sys_ipc_recv(void *rcv_pg);
+int32_t sys_ipc_recv_from(envid_t fromenv, void *pg);
 unsigned int sys_time_msec(void);
 
 // This must be inlined.  Exercise for reader: why?
@@ -75,12 +76,15 @@ sys_exofork(void)
 // ipc.c
 void	ipc_send(envid_t to_env, uint32_t value, void *pg, int perm);
 int32_t ipc_recv(envid_t *from_env_store, void *pg, int *perm_store);
+int32_t ipc_recv_from(envid_t fromenv, void *pg, int *perm_store);
 envid_t	ipc_find_env(enum EnvType type);
 
 // fork.c
 #define	PTE_SHARE	0x400
 envid_t	fork(void);
 envid_t	sfork(void);	// Challenge!
+const volatile struct Env * getenvptr(void); // Allow shared-memory forks to get their envid.
+
 
 // fd.c
 int	close(int fd);
