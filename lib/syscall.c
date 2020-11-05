@@ -145,10 +145,12 @@ sys_ipc_recv(void *dstva)
 int
 sys_ipc_recv_from(envid_t fromenv, void *dstva)
 {
-	return syscall(SYS_ipc_recv_from, 1, fromenv, (uint32_t)dstva, 0, 0, 0);
+	return syscall(SYS_ipc_recv_from, 1, fromenv, (uint32_t) dstva, 0, 0, 0);
+}
 
 unsigned int
 sys_time_msec(void)
 {
 	return (unsigned int) syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
 }
+
