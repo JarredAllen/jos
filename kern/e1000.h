@@ -13,7 +13,8 @@
 #define E1000_TDT      0x03818  /* TX Descriptor Tail - RW */
 
 #define E1000_TBUFSIZE 1024	/* Transmit Buffer Size */
-#define E1000_TBUFCNT  (E1000_TBUFSIZE/sizeof(struct tx_desc)) /* Size of Buffer Array */
+#define E1000_TBUFCNT  (E1000_TBUFSIZE/sizeof(struct e1000_tx_desc)) 
+/* Size of Buffer Array */
 
 #define E1000_TIPG     0x00410  /* TX Inter-packet gap -RW */
 
@@ -27,7 +28,34 @@
 #define E1000_TXCMD_RS  8
 #define E1000_TXSTAT_DD 1
 
-struct tx_desc
+#define E1000_RAL      0x05400  /* Receive Address Low - RW Array */
+#define E1000_RAH      0x05404  /* Receive Address High - RW Array */
+
+#define E1000_MTA      0x05200  /* Multicast Table Array - RW Array */
+
+#define E1000_IMS      0x000D0  /* Interrupt Mask Set - RW */
+
+#define E1000_RCTL     0x00100  /* RX Control - RW */
+#define E1000_RDBAL    0x02800  /* RX Descriptor Base Address Low - RW */
+#define E1000_RDLEN    0x02808  /* RX Descriptor Length - RW */
+#define E1000_RDH      0x02810  /* RX Descriptor Head - RW */
+#define E1000_RDT      0x02818  /* RX Descriptor Tail - RW */
+#define E1000_RDTR     0x02820  /* RX Delay Timer - RW */
+
+#define E1000_RCTL_EN             0x00000002    /* enable */
+#define E1000_RCTL_LPE            0x00000020    /* long packet enable */
+#define E1000_RCTL_LBM_NO         0x00000000    /* no loopback mode */
+#define E1000_RCTL_BAM            0x00008000    /* broadcast enable */
+#define E1000_RCTL_SZ_2048        0x00000000    /* rx buffer size 2048 */
+
+#define E1000_RCTL_SECRC          0x04000000    /* Strip Ethernet CRC */
+
+#define E1000_RBUFSIZE 1024	/* Receive Buffer Size */
+#define E1000_RBUFCNT  (E1000_RBUFSIZE/sizeof(struct e1000_rx_desc)) 
+/* Size of Buffer Array */
+
+/* Transmit Descriptor */
+struct e1000_tx_desc
 {
 	uint64_t addr;
 	uint16_t length;
@@ -35,6 +63,16 @@ struct tx_desc
 	uint8_t cmd;
 	uint8_t status;
 	uint8_t css;
+	uint16_t special;
+};
+
+/* Receive Descriptor */
+struct e1000_rx_desc {
+	uint64_t buffer_addr;	/* Address of the descriptor's data buffer */
+	uint16_t length;	/* Length of data DMAed into data buffer */
+	uint16_t csum;		/* Packet checksum */
+	uint8_t status;		/* Descriptor status */
+	uint8_t errors;      	/* Descriptor Errors */
 	uint16_t special;
 };
 
