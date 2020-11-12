@@ -1,4 +1,5 @@
 #include <kern/e1000.h>
+#include <kern/env.h>
 #include <kern/pmap.h>
 #include <kern/pci.h>
 #include <inc/error.h>
@@ -30,7 +31,6 @@ attach_e1000(struct pci_func * pcif)
 	for (int i = 0; i < E1000_TBUFCNT; i++) {
 		transmit_buf[i].status = E1000_TXSTAT_DD;
 	}
-	send_data(0, 0, 1);
 	return 0;
 }
 
@@ -41,8 +41,11 @@ send_data(void * start, int len, int eop)
 	if (!(transmit_buf[tail].status & E1000_TXSTAT_DD)) {
 		return -E_NO_MEM;
 	}
+	uint32_t pstart = ((* pgdir_walk(curenv->env_pgdir, start, 0)) 
+				& (~0xfff)) 
+			  + PGOFF(start);
 	transmit_buf[tail] = (struct tx_desc) {
-		.addr   = (uint32_t) start, 
+		.addr   = pstart, 
 		.length = (uint16_t) len, 
 		.cmd = E1000_TXCMD_RS | eop, 
 	};

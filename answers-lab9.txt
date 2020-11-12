@@ -1,0 +1,4 @@
+1. Our send function returns an error code if the buffer is full. We leave it to the user
+program to retry sending the data on a failure. Within our "output" user
+program, we have a loop that checks whether our syscall fails and we keep trying
+until it succeeds.
