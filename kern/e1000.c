@@ -37,9 +37,10 @@ attach_e1000(struct pci_func * pcif)
 	}
 
 	// Initialize Receive:
-	E_REG(E1000_RAL) = 0x52540012;
-	E_REG(E1000_RAH) = 0x3456;
-	memset(e1000_BAR0 + E1000_MTA, 0, 512);
+	E_REG(E1000_RAL) = 0x12005452;
+	E_REG(E1000_RAH) = 0x80000000 | 0x5634;
+	//E_REG(E1000_MTA) = 0;
+	memset(&E_REG(E1000_MTA), 0, 512);
 	E_REG(E1000_IMS) = 0;
 	E_REG(E1000_RDTR) = 0;
 	recv_buf = page2kva(buf_pg) + 2048;
@@ -49,6 +50,8 @@ attach_e1000(struct pci_func * pcif)
 			   | E1000_RCTL_LBM_NO 
 			   | E1000_RCTL_BAM 
 			   | E1000_RCTL_SECRC;
+	E_REG(E1000_RDH) = 0;
+	E_REG(E1000_RDT) = E1000_RBUFCNT;
 	return 0;
 }
 
