@@ -5,13 +5,13 @@
 #include <inc/error.h>
 #include <inc/string.h>
 
-// LAB 6: Your driver code here
-
 void * e1000_BAR0;
 struct e1000_tx_desc * transmit_buf;
 struct e1000_rx_desc * recv_buf;
 
-#define E_REG(offset) (*(uint32_t *) (e1000_BAR0 + (offset)))
+static void read_mac_address();
+
+#define E_REG(offset) (*(volatile uint32_t *) (e1000_BAR0 + (offset)))
 
 int
 attach_e1000(struct pci_func * pcif)
@@ -37,10 +37,10 @@ attach_e1000(struct pci_func * pcif)
 	}
 
 	// Initialize Receive:
-	E_REG(E1000_RAL) = 0x12005452;
-	E_REG(E1000_RAH) = 0x80000000 | 0x5634;
-	//E_REG(E1000_MTA) = 0;
-	memset(&E_REG(E1000_MTA), 0, 512);
+	read_mac_address();
+	E_REG(E1000_RAL) = (uint32_t)e1000_mac_address;
+	E_REG(E1000_RAH) = (uint32_t)(e1000_mac_address >> 32);
+	memset((uint32_t *) &E_REG(E1000_MTA), 0, 512);
 	E_REG(E1000_IMS) = 0;
 	E_REG(E1000_RDTR) = 0;
 	recv_buf = page2kva(buf_pg) + 2048;
@@ -73,4 +73,28 @@ send_data(void * start, int len, int eop)
 	tail = (tail + 1) % E1000_TBUFCNT;
 	#undef tail
 	return 0;
+}
+
+// Read a word from the eeprom at the specified address
+static uint16_t
+read_eeprom(uint8_t addr)
+{
+	E_REG(E1000_EERD) = E1000_EERD_START | (addr << E1000_EERD_ADDR_SHIFT);
+	while (!(E_REG(E1000_EERD) & E1000_EERD_DONE))
+		;
+	uint16_t result = (uint16_t) (E_REG(E1000_EERD) >> E1000_EERD_DATA_SHIFT);
+	return result;
+}
+
+// Read the MAC address from the E1000 and put it in the global variable
+static void
+read_mac_address()
+{
+	uint16_t t;
+	t = read_eeprom(0);
+	e1000_mac_address = t;
+	t = read_eeprom(1);
+	e1000_mac_address |= ((uint64_t)t) << 16;
+	t = read_eeprom(2);
+	e1000_mac_address |= ((uint64_t)t) << 32;
 }

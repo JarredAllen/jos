@@ -47,8 +47,14 @@
 #define E1000_RCTL_LBM_NO         0x00000000    /* no loopback mode */
 #define E1000_RCTL_BAM            0x00008000    /* broadcast enable */
 #define E1000_RCTL_SZ_2048        0x00000000    /* rx buffer size 2048 */
-
 #define E1000_RCTL_SECRC          0x04000000    /* Strip Ethernet CRC */
+
+#define E1000_EERD     0x00014  /* EEPROM Read - RW */
+
+#define E1000_EERD_START          0x00000001    /* start read */
+#define E1000_EERD_DONE           0x00000010    /* read done */
+#define E1000_EERD_ADDR_SHIFT     8             /* addr field shift amount */
+#define E1000_EERD_DATA_SHIFT     16            /* data field shift amount */
 
 #define E1000_RBUFSIZE 1024	/* Receive Buffer Size */
 #define E1000_RBUFCNT  (E1000_RBUFSIZE/sizeof(struct e1000_rx_desc)) 
@@ -75,6 +81,9 @@ struct e1000_rx_desc {
 	uint8_t errors;      	/* Descriptor Errors */
 	uint16_t special;
 };
+
+// A global which is initialized to the mac address when the e1000 is attached.
+uint64_t e1000_mac_address;
 
 int attach_e1000(struct pci_func * pcif);
 int send_data(void * start, int len, int eop);
