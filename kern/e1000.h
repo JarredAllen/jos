@@ -83,7 +83,7 @@ struct e1000_rx_desc {
 };
 
 // A global which is initialized to the mac address when the e1000 is attached.
-uint64_t e1000_mac_address;
+uint8_t e1000_mac_address[6];
 
 int attach_e1000(struct pci_func * pcif);
 int send_data(void * start, int len, int eop);

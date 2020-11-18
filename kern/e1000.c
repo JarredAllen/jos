@@ -38,8 +38,14 @@ attach_e1000(struct pci_func * pcif)
 
 	// Initialize Receive:
 	read_mac_address();
-	E_REG(E1000_RAL) = (uint32_t)e1000_mac_address;
-	E_REG(E1000_RAH) = (uint32_t)(e1000_mac_address >> 32);
+	E_REG(E1000_RAL) =
+		((uint32_t)e1000_mac_address[0] << 0)
+		| ((uint32_t)e1000_mac_address[1] << 8)
+		| ((uint32_t)e1000_mac_address[2] << 16)
+		| ((uint32_t)e1000_mac_address[3] << 24);
+	E_REG(E1000_RAH) = 0x80000000
+		| ((uint32_t)e1000_mac_address[4] << 0)
+		| ((uint32_t)e1000_mac_address[5] << 8);
 	memset((uint32_t *) &E_REG(E1000_MTA), 0, 512);
 	E_REG(E1000_IMS) = 0;
 	E_REG(E1000_RDTR) = 0;
@@ -92,9 +98,12 @@ read_mac_address()
 {
 	uint16_t t;
 	t = read_eeprom(0);
-	e1000_mac_address = t;
+	e1000_mac_address[0] = t & 0xFF;
+	e1000_mac_address[1] = (t >> 8) & 0xFF;
 	t = read_eeprom(1);
-	e1000_mac_address |= ((uint64_t)t) << 16;
+	e1000_mac_address[2] = t & 0xFF;
+	e1000_mac_address[3] = (t >> 8) & 0xFF;
 	t = read_eeprom(2);
-	e1000_mac_address |= ((uint64_t)t) << 32;
+	e1000_mac_address[4] = t & 0xFF;
+	e1000_mac_address[5] = (t >> 8) & 0xFF;
 }
