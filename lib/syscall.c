@@ -159,3 +159,10 @@ sys_send_packet(void * start, int length)
 {
 	return syscall(SYS_send_packet, 0, (uint32_t) start, length, 0, 0, 0);
 }
+
+void
+sys_get_mac_address(uint8_t * start)
+{
+	syscall(SYS_get_mac_address, 0, (uint32_t)start, 0, 0, 0, 0);
+	return;
+}

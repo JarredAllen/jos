@@ -420,6 +420,18 @@ sys_send_packet(void * start, int length)
 	return send_data(start, length, 1);
 }
 
+// Write the system's mac address to the given location in memory
+void
+sys_get_mac_address(uint8_t* start) {
+	user_mem_assert(curenv, start, 6, PTE_U | PTE_W);
+	start[0] = e1000_mac_address[0];
+	start[1] = e1000_mac_address[1];
+	start[2] = e1000_mac_address[2];
+	start[3] = e1000_mac_address[3];
+	start[4] = e1000_mac_address[4];
+	start[5] = e1000_mac_address[5];
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -463,6 +475,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_time_msec();
 	case SYS_send_packet:
 		return sys_send_packet((void *) a1, a2);
+	case SYS_get_mac_address:
+		sys_get_mac_address((void *) a1);
+		return 0;
 	default:
 		return -E_INVAL;
 	}
