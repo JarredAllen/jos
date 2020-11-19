@@ -58,6 +58,9 @@ attach_e1000(struct pci_func * pcif)
 			   | E1000_RCTL_SECRC;
 	E_REG(E1000_RDH) = 0;
 	E_REG(E1000_RDT) = E1000_RBUFCNT;
+	for(int i = 0; i < E1000_RBUFCNT; i++){
+		recv_buf[i].buffer_addr = (uintptr_t) page2kva(page_alloc(ALLOC_ZERO));
+	}
 	return 0;
 }
 
@@ -79,6 +82,36 @@ send_data(void * start, int len, int eop)
 	tail = (tail + 1) % E1000_TBUFCNT;
 	#undef tail
 	return 0;
+}
+
+
+// If data is successfully received, returns the length and maps the received data at va
+// If given an invalid va, returns -E_INVAL
+// If no packet is available, returns -E_NO_MEM
+int 
+recv_data(void * va)
+{
+	#define tail (E_REG(E1000_RDT) % E1000_RBUFCNT)
+	if (recv_buf[tail].status & E1000_RXSTAT_DD){
+		if ((uintptr_t) va >= UTOP) {
+			return -E_INVAL;
+		}
+		else {
+			page_insert(curenv->env_pgdir, 
+				    kva2page((void *) (uintptr_t) 
+				    		recv_buf[tail].buffer_addr), 
+				    va,
+				    PTE_U | PTE_W
+				   );
+			recv_buf[tail].status &= ~E1000_RXSTAT_DD;	
+			recv_buf[tail].buffer_addr = 
+				(uintptr_t) page2kva(page_alloc(ALLOC_ZERO));
+			E_REG(E1000_RDT) = (tail + 1) % E1000_TBUFCNT;
+			return recv_buf[tail].length;
+		}
+	}
+	return -E_NO_MEM;
+	#undef tail
 }
 
 // Read a word from the eeprom at the specified address

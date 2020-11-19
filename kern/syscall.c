@@ -432,6 +432,15 @@ sys_get_mac_address(uint8_t* start) {
 	start[5] = e1000_mac_address[5];
 }
 
+// If data is successfully received, returns the length and maps the received data at va
+// If given an invalid va, returns -E_INVAL
+// If no packet is available, returns -E_NO_MEM
+int 
+sys_e1000_recv(void * va)
+{
+	return recv_data(va);
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -478,6 +487,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	case SYS_get_mac_address:
 		sys_get_mac_address((void *) a1);
 		return 0;
+	case SYS_e1000_recv:
+		return sys_e1000_recv((void *) a1);
 	default:
 		return -E_INVAL;
 	}

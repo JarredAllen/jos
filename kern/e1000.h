@@ -56,6 +56,8 @@
 #define E1000_EERD_ADDR_SHIFT     8             /* addr field shift amount */
 #define E1000_EERD_DATA_SHIFT     16            /* data field shift amount */
 
+#define E1000_RXSTAT_DD 1
+
 #define E1000_RBUFSIZE 1024	/* Receive Buffer Size */
 #define E1000_RBUFCNT  (E1000_RBUFSIZE/sizeof(struct e1000_rx_desc)) 
 /* Size of Buffer Array */
@@ -87,6 +89,7 @@ uint8_t e1000_mac_address[6];
 
 int attach_e1000(struct pci_func * pcif);
 int send_data(void * start, int len, int eop);
+int recv_data(void * va);
 
 #define JOS_KERN_E1000_H
 #endif  // SOL >= 6

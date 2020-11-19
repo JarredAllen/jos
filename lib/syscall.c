@@ -166,3 +166,9 @@ sys_get_mac_address(uint8_t * start)
 	syscall(SYS_get_mac_address, 0, (uint32_t)start, 0, 0, 0, 0);
 	return;
 }
+
+int 
+sys_e1000_recv(void * va)
+{
+	return syscall(SYS_e1000_recv, 0, (uint32_t) va, 0, 0, 0, 0);
+}
