@@ -74,24 +74,6 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	uint32_t *curr_trap = &traphandler_data;
-
-	for (; curr_trap < &end_traphandler_data; curr_trap += 4) {
-		SETGATE(idt[curr_trap[0]], curr_trap[1], GD_KT, curr_trap[2], curr_trap[3]);
-	}
-#define WRMSR(reg_addr, value) asm volatile( \
-		"wrmsr" \
-		: \
-		: "c" ((uint32_t)reg_addr), \
-		  "d" (0), \
-		  "a" ((uint32_t)value) \
-		: \
-	);
-	WRMSR(0x174, GD_KT)
-	WRMSR(0x175, KSTACKTOP)
-	WRMSR(0x176, &sysenter_handler)
-#undef WRMSR
-
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -123,26 +105,43 @@ trap_init_percpu(void)
 	// get a triple fault.  If you set up an individual CPU's TSS
 	// wrong, you may not get a fault until you try to return from
 	// user space on that CPU.
-	//
-	// LAB 5: Your code here:
 
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
-	ts.ts_esp0 = KSTACKTOP;
-	ts.ts_ss0 = GD_KD;
-	ts.ts_iomb = sizeof(struct Taskstate);
+	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - cpunum()*(KSTKSIZE+KSTKGAP);
+	thiscpu->cpu_ts.ts_ss0 = GD_KD;
+	thiscpu->cpu_ts.ts_iomb = sizeof(struct Taskstate);
 
 	// Initialize the TSS slot of the gdt.
-	gdt[GD_TSS0 >> 3] = SEG16(STS_T32A, (uint32_t) (&ts),
-					sizeof(struct Taskstate) - 1, 0);
-	gdt[GD_TSS0 >> 3].sd_s = 0;
+
+	gdt[(GD_TSS0 >> 3) + cpunum()] = SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts),
+						sizeof(struct Taskstate) - 1, 0);
+	gdt[(GD_TSS0 >> 3) + cpunum()].sd_s = 0;
 
 	// Load the TSS selector (like other segment selectors, the
 	// bottom three bits are special; we leave them 0)
-	ltr(GD_TSS0);
+	ltr(GD_TSS0 + (cpunum() << 3));
 
 	// Load the IDT
 	lidt(&idt_pd);
+
+	// Set up sysenter/sysexit for each cpu
+	uint32_t *curr_trap = &traphandler_data;
+	for (; curr_trap < &end_traphandler_data; curr_trap += 4) {
+		SETGATE(idt[curr_trap[0]], curr_trap[1], GD_KT, curr_trap[2], curr_trap[3]);
+	}
+#define WRMSR(reg_addr, value) asm volatile( \
+		"wrmsr" \
+		: \
+		: "c" ((uint32_t)(reg_addr)), \
+		  "d" (0), \
+		  "a" ((uint32_t)(value)) \
+		: \
+	);
+	WRMSR(0x174, GD_KT)
+	WRMSR(0x175, KSTACKTOP - cpunum()*(KSTKSIZE+KSTKGAP))
+	WRMSR(0x176, &sysenter_handler)
+#undef WRMSR
 }
 
 void
@@ -269,7 +268,7 @@ trap(struct Trapframe *tf)
 		// Trapped from user mode.
 		// Acquire the big kernel lock before doing any
 		// serious kernel work.
-		// LAB 5: Your code here.
+		lock_kernel();
 		assert(curenv);
 		assert(curenv->env_status == ENV_RUNNING);
 

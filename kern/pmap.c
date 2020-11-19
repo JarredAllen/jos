@@ -255,9 +255,12 @@ mem_init_mp(void)
 	//             it will fault rather than overwrite another CPU's stack.
 	//             Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
-	//
-	// LAB 5: Your code here:
 
+	for (int i=0; i < NCPU; i++) {
+		uintptr_t kstacktop_i = KSTACKTOP - i*(KSTKSIZE + KSTKGAP);
+		uintptr_t stack_bottom = kstacktop_i - KSTKSIZE;
+		boot_map_region(kern_pgdir, stack_bottom, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+	}
 }
 
 // --------------------------------------------------------------
@@ -309,6 +312,10 @@ page_init(void)
 			// IO hole is right next to extended physical memory
 			// the kernel is loaded into the beginning of extended physical memory
 			// and any memory we use before now ends at boot_alloc(0)
+			pages[i].pp_link = NULL;
+		} else if (page_addr == MPENTRY_PADDR) {
+			// Don't allocate the MPENTRY_PADDR block
+			pages[i].pp_ref = 0;
 			pages[i].pp_link = NULL;
 		} else {
 			pages[i].pp_link = page_free_list;
@@ -559,11 +566,13 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Be sure to round size up to a multiple of PGSIZE and to
 	// handle if this reservation would overflow MMIOLIM (it's
 	// okay to simply panic if this happens).
-	//
-	// Hint: The staff solution uses boot_map_region.
-	//
-	// Your code here:
-	panic("mmio_map_region not implemented");
+	uintptr_t old_base = base;
+	base += ROUNDUP(size, PGSIZE);
+	if (base > MMIOLIM) {
+		panic("mmio_map_region too much stuff allocated");
+	}
+	boot_map_region(kern_pgdir, old_base, size, pa, PTE_W | PTE_PCD | PTE_PWT);
+	return (void *) old_base;
 }
 
 static uintptr_t user_mem_check_addr;
@@ -803,9 +812,14 @@ check_kern_pgdir(void)
 	// (updated in lab 4 to check per-CPU kernel stacks)
 	for (n = 0; n < NCPU; n++) {
 		uint32_t base = KSTACKTOP - (KSTKSIZE + KSTKGAP) * (n + 1);
-		for (i = 0; i < KSTKSIZE; i += PGSIZE)
+		for (i = 0; i < KSTKSIZE; i += PGSIZE) {
+			if (check_va2pa(pgdir, base + KSTKGAP + i) != PADDR(percpu_kstacks[n]) + i) {
+				cprintf("Failed at CPU %d stack address 0x%x\n", n, i);
+				cprintf("Should be 0x%x, but is 0x%x\n", PADDR(percpu_kstacks[n]), check_va2pa(pgdir, base + KSTKGAP + i));
+			}
 			assert(check_va2pa(pgdir, base + KSTKGAP + i)
 				== PADDR(percpu_kstacks[n]) + i);
+		}
 		for (i = 0; i < KSTKGAP; i += PGSIZE)
 			assert(check_va2pa(pgdir, base + i) == ~0);
 	}

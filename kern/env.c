@@ -485,6 +485,10 @@ env_pop_tf(struct Trapframe *tf)
 
 	asm volatile(
 		"\tmovl %0,%%esp\n"
+		"\tmovl %%esp, %%eax\n"
+		"\tsubl $512, %%eax\n"
+		"\tandl $0xFFFFFFF0, %%eax\n"
+		"\tfxrstor (%%eax)\n"
 		"\tpopal\n"
 		"\tpopl %%es\n"
 		"\tpopl %%ds\n"
@@ -524,6 +528,7 @@ env_run(struct Env *e)
 		lcr3(PADDR(curenv->env_pgdir));
 		++curenv->env_runs;
 	}
+	unlock_kernel();
 	env_pop_tf(&e->env_tf);
 }
 
