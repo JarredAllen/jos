@@ -16,10 +16,13 @@ input(envid_t ns_envid)
 	// another packet in to the same physical page.
 	int rcvlen;
 	cprintf("Buffer addr: %x\n", &recv_data);
+	//cprintf("envid: %x\n", thisenv);
 	while (1){
 		while ((rcvlen = sys_e1000_recv(&recv_data)) < 0){
 			sys_yield();
 		}
-		ipc_send(ns_envid, rcvlen, &recv_data, PTE_U | PTE_W);
+		cprintf("receiving packet, len = %d\n", rcvlen);
+		* (int *) &recv_data[2048] = rcvlen;
+		ipc_send(ns_envid, NSREQ_INPUT, &recv_data, PTE_U | PTE_W | PTE_P);
 	}
 }
