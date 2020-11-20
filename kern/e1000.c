@@ -57,7 +57,7 @@ attach_e1000(struct pci_func * pcif)
 			   | E1000_RCTL_BAM 
 			   | E1000_RCTL_SECRC;
 	E_REG(E1000_RDH) = 0;
-	E_REG(E1000_RDT) = E1000_RBUFCNT;
+	E_REG(E1000_RDT) = E1000_RBUFCNT - 1;
 	for(int i = 0; i < E1000_RBUFCNT; i++){
 		recv_buf[i].buffer_addr = (uintptr_t) page2pa(page_alloc(ALLOC_ZERO));
 	}
@@ -91,28 +91,30 @@ send_data(void * start, int len, int eop)
 int 
 recv_data(void * va)
 {
-	#define tail (E_REG(E1000_RDT) % E1000_RBUFCNT)
-	cprintf("Buffer head: %d, tail: %d\n", E_REG(E1000_RDH), E_REG(E1000_RDT));
-	if (recv_buf[tail].status & E1000_RXSTAT_DD){
-		if ((uintptr_t) va >= UTOP) {
-			return -E_INVAL;
+	#define oldtail (E_REG(E1000_RDT))
+	#define newtail ((E_REG(E1000_RDT) + 1) % E1000_RBUFCNT)
+	if ((uintptr_t) va >= UTOP) {
+		return -E_INVAL;
+	}
+	if (recv_buf[newtail].status & E1000_RXSTAT_DD){
+		if (newtail == E_REG(E1000_RDH)) {
+			cprintf("Head equals tail :(\n");
 		}
-		else {
-			page_insert(curenv->env_pgdir, 
-				    pa2page((physaddr_t) recv_buf[tail].buffer_addr), 
-				    va,
-				    PTE_U | PTE_W
-				   );
-			recv_buf[tail].status &= ~E1000_RXSTAT_DD;	
-			recv_buf[tail].buffer_addr = 
-				(uintptr_t) page2pa(page_alloc(ALLOC_ZERO));
-			int length = recv_buf[tail].length;
-			E_REG(E1000_RDT) = (tail + 1) % E1000_TBUFCNT;
-			return length; 
-		}
+		page_insert(curenv->env_pgdir, 
+			    pa2page((physaddr_t) recv_buf[newtail].buffer_addr), 
+			    va,
+			    PTE_U | PTE_W
+			   );
+		recv_buf[newtail].status &= ~E1000_RXSTAT_DD;
+		recv_buf[newtail].buffer_addr = 
+			(uintptr_t) page2pa(page_alloc(ALLOC_ZERO));
+		int length = recv_buf[newtail].length;
+		oldtail = newtail;
+		return length; 
 	}
 	return -E_NO_MEM;
-	#undef tail
+	#undef oldtail
+	#undef newtail
 }
 
 // Read a word from the eeprom at the specified address
