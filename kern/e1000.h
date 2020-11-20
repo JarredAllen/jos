@@ -58,8 +58,8 @@
 
 #define E1000_RXSTAT_DD 1
 
-#define E1000_RBUFSIZE 1024	/* Receive Buffer Size */
-#define E1000_RBUFCNT  (E1000_RBUFSIZE/sizeof(struct e1000_rx_desc)) 
+#define E1000_RBUFSIZE (E1000_RBUFCNT * sizeof(struct e1000_rx_desc))	/* Receive Buffer Size */
+#define E1000_RBUFCNT  128 
 /* Size of Buffer Array */
 
 /* Transmit Descriptor */

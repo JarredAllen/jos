@@ -91,29 +91,26 @@ send_data(void * start, int len, int eop)
 int 
 recv_data(void * va)
 {
-	#define oldtail (E_REG(E1000_RDT))
+	#define tail (E_REG(E1000_RDT))
 	#define newtail ((E_REG(E1000_RDT) + 1) % E1000_RBUFCNT)
 	if ((uintptr_t) va >= UTOP) {
 		return -E_INVAL;
 	}
 	if (recv_buf[newtail].status & E1000_RXSTAT_DD){
-		if (newtail == E_REG(E1000_RDH)) {
-			cprintf("Head equals tail :(\n");
-		}
 		page_insert(curenv->env_pgdir, 
 			    pa2page((physaddr_t) recv_buf[newtail].buffer_addr), 
 			    va,
 			    PTE_U | PTE_W
 			   );
-		recv_buf[newtail].status &= ~E1000_RXSTAT_DD;
+		recv_buf[newtail].status = 0;
 		recv_buf[newtail].buffer_addr = 
 			(uintptr_t) page2pa(page_alloc(ALLOC_ZERO));
 		int length = recv_buf[newtail].length;
-		oldtail = newtail;
+		tail = newtail;
 		return length; 
 	}
 	return -E_NO_MEM;
-	#undef oldtail
+	#undef tail
 	#undef newtail
 }
 
