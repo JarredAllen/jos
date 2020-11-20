@@ -115,8 +115,8 @@ low_level_output(struct netif *netif, struct pbuf *p)
 static struct pbuf *
 low_level_input(void *va)
 {
-    struct jif_pkt *pkt = (struct jif_pkt *)va;
-    s16_t len = pkt->jp_len;
+    //struct jif_pkt *pkt = (struct jif_pkt *)va;
+    s16_t len = * (int *) (va+2048); //pkt->jp_len;
 
     struct pbuf *p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
     if (p == 0)
@@ -124,7 +124,7 @@ low_level_input(void *va)
 
     /* We iterate over the pbuf chain until we have read the entire
      * packet into the pbuf. */
-    void *rxbuf = (void *) pkt->jp_data;
+    void *rxbuf = va; //(void *) pkt->jp_data;
     int copied = 0;
     struct pbuf *q;
     for (q = p; q != NULL; q = q->next) {
