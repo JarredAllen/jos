@@ -145,10 +145,30 @@ sys_ipc_recv(void *dstva)
 int
 sys_ipc_recv_from(envid_t fromenv, void *dstva)
 {
-	return syscall(SYS_ipc_recv_from, 1, fromenv, (uint32_t)dstva, 0, 0, 0);
+	return syscall(SYS_ipc_recv_from, 1, fromenv, (uint32_t) dstva, 0, 0, 0);
+}
 
 unsigned int
 sys_time_msec(void)
 {
 	return (unsigned int) syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
+}
+
+int
+sys_send_packet(void * start, int length)
+{
+	return syscall(SYS_send_packet, 0, (uint32_t) start, length, 0, 0, 0);
+}
+
+void
+sys_get_mac_address(uint8_t * start)
+{
+	syscall(SYS_get_mac_address, 0, (uint32_t)start, 0, 0, 0, 0);
+	return;
+}
+
+int 
+sys_e1000_recv(void * va)
+{
+	return syscall(SYS_e1000_recv, 0, (uint32_t) va, 0, 0, 0, 0);
 }

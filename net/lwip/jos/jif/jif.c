@@ -42,6 +42,8 @@
 #include "lwip/sys.h"
 #include <lwip/stats.h>
 
+#include "net/ns.h"
+
 #include <netif/etharp.h>
 
 #define PKTMAP		0x10000000
@@ -60,13 +62,8 @@ low_level_init(struct netif *netif)
     netif->mtu = 1500;
     netif->flags = NETIF_FLAG_BROADCAST;
 
-    // MAC address is hardcoded to eliminate a system call
-    netif->hwaddr[0] = 0x52;
-    netif->hwaddr[1] = 0x54;
-    netif->hwaddr[2] = 0x00;
-    netif->hwaddr[3] = 0x12;
-    netif->hwaddr[4] = 0x34;
-    netif->hwaddr[5] = 0x56;
+    // MAC address is loaded from a syscall
+    sys_get_mac_address(&netif->hwaddr[0]);
 }
 
 /*
@@ -120,8 +117,8 @@ low_level_output(struct netif *netif, struct pbuf *p)
 static struct pbuf *
 low_level_input(void *va)
 {
-    struct jif_pkt *pkt = (struct jif_pkt *)va;
-    s16_t len = pkt->jp_len;
+    struct ns_input_packet *pkt = (struct ns_input_packet *)va;
+    s16_t len = pkt->len;
 
     struct pbuf *p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
     if (p == 0)
@@ -129,7 +126,7 @@ low_level_input(void *va)
 
     /* We iterate over the pbuf chain until we have read the entire
      * packet into the pbuf. */
-    void *rxbuf = (void *) pkt->jp_data;
+    void *rxbuf = &pkt->data;
     int copied = 0;
     struct pbuf *q;
     for (q = p; q != NULL; q = q->next) {

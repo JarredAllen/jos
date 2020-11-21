@@ -13,6 +13,7 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/time.h>
+#include <kern/e1000.h>
 
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
@@ -408,8 +409,40 @@ sysenter_syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint
 static int
 sys_time_msec(void)
 {
-	// LAB 6: Your code here.
-	panic("sys_time_msec not implemented");
+	return time_msec();
+}
+
+// Send data over the network using the e1000 network card.
+// It is the user's responsibility to not change the data pointed to until it is sent over the wire
+int
+sys_send_packet(void * start, int length)
+{	
+	user_mem_assert(curenv, start, length, PTE_U);
+	return send_data(start, length);
+}
+
+// Write the system's mac address to the given location in memory
+void
+sys_get_mac_address(uint8_t* start) {
+	user_mem_assert(curenv, start, 6, PTE_U | PTE_W);
+	start[0] = e1000_mac_address[0];
+	start[1] = e1000_mac_address[1];
+	start[2] = e1000_mac_address[2];
+	start[3] = e1000_mac_address[3];
+	start[4] = e1000_mac_address[4];
+	start[5] = e1000_mac_address[5];
+}
+
+// If data is successfully received, returns the length and maps the received data at va
+// If given an invalid va (above UTOP or not page-aligned), returns -E_INVAL
+// If no packet is available, returns -E_NO_MEM
+int 
+sys_e1000_recv(void * va)
+{
+	if (((uintptr_t) va >= UTOP) || ((uintptr_t) va != PTE_ADDR(va))) {
+		return -E_INVAL;
+	}
+	return recv_data(va);
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
@@ -451,6 +484,15 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_env_set_pgfault_upcall(a1, (void *) a2);
 	case SYS_env_set_trapframe:
 		return sys_env_set_trapframe(a1, (void *) a2);
+	case SYS_time_msec:
+		return sys_time_msec();
+	case SYS_send_packet:
+		return sys_send_packet((void *) a1, a2);
+	case SYS_get_mac_address:
+		sys_get_mac_address((void *) a1);
+		return 0;
+	case SYS_e1000_recv:
+		return sys_e1000_recv((void *) a1);
 	default:
 		return -E_INVAL;
 	}

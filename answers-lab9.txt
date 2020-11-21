@@ -1,0 +1,11 @@
+1. Our send function returns an error code if the buffer is full. We leave it to the user
+program to retry sending the data on a failure. Within our "output" user
+program, we have a loop that checks whether our syscall fails and we keep trying
+until it succeeds.
+2. We place the data at the beginning of a page, and map it to a given virtual
+address. If there is a problem with the address given, or the buffer is empty,
+we return an error. In the case of an empty buffer, net/input requests the packet
+again in a loop.
+3. The Webserver says in a header "This file came from JOS" and has text
+scrolling across the page that says "Cheesy web page!"
+4. Probably about 12 hours. We met 5 or 6 times over 3 weeks.
