@@ -84,7 +84,7 @@ send_data(struct http_request *req, int fd)
 		}
 	}
 	if (nbytes < 0) {
-	die("error reading from file");
+		die("error reading from file");
 	}
 	return 0;
 }
