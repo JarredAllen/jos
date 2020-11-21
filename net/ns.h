@@ -20,3 +20,7 @@ void input(envid_t ns_envid);
 /* output.c */
 void output(envid_t ns_envid);
 
+struct ns_input_packet {
+	char data[2048];
+	uint32_t len;
+} __attribute__((aligned (PGSIZE)));
