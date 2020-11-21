@@ -413,11 +413,12 @@ sys_time_msec(void)
 }
 
 // Send data over the network using the e1000 network card.
+// It is the user's responsibility to not change the data pointed to until it is sent over the wire
 int
 sys_send_packet(void * start, int length)
 {	
 	user_mem_assert(curenv, start, length, PTE_U);
-	return send_data(start, length, 1);
+	return send_data(start, length);
 }
 
 // Write the system's mac address to the given location in memory

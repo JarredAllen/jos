@@ -64,13 +64,10 @@ attach_e1000(struct pci_func * pcif)
 	return 0;
 }
 
-int
-send_data(void * start, int len, int eop)
+static void
+write_transmit_desc(void * start, int len, int eop)
 {
 	#define tail E_REG(E1000_TDT)
-	if (!(transmit_buf[tail].status & E1000_TXSTAT_DD)) {
-		return -E_NO_MEM;
-	}
 	uint32_t pstart = PTE_ADDR(* pgdir_walk(curenv->env_pgdir, start, 0))
 			  + PGOFF(start);
 	transmit_buf[tail] = (struct e1000_tx_desc) {
@@ -79,6 +76,31 @@ send_data(void * start, int len, int eop)
 		.cmd = E1000_TXCMD_RS | eop, 
 	};
 	tail = (tail + 1) % E1000_TBUFCNT;
+	#undef tail
+}
+
+int
+send_data(void * start, int len)
+{
+	#define tail E_REG(E1000_TDT)
+	int desc_count = (ROUNDUP(start + len, PGSIZE) - ROUNDDOWN(start, PGSIZE)) / PGSIZE;
+	for (int i=0; i < desc_count; i++) {
+		if (!(transmit_buf[(tail + i) % E1000_TBUFCNT].status & E1000_TXSTAT_DD)) {
+			return -E_NO_MEM;
+		}
+	}
+	while (len > 0) {
+		void * next_start = start;
+		next_start = ROUNDDOWN(start, PGSIZE) + PGSIZE;
+		int desclen = next_start - start;
+		if (desclen > len) {
+			desclen = len;
+		}
+		int eop = (desclen == len);
+		write_transmit_desc(start, len, eop);
+		start = next_start;
+		len -= desclen;
+	}
 	#undef tail
 	return 0;
 }

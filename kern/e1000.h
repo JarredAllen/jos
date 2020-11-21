@@ -88,7 +88,7 @@ struct e1000_rx_desc {
 uint8_t e1000_mac_address[6];
 
 int attach_e1000(struct pci_func * pcif);
-int send_data(void * start, int len, int eop);
+int send_data(void * start, int len);
 int recv_data(void * va);
 
 #define JOS_KERN_E1000_H
