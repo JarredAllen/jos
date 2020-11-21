@@ -433,11 +433,14 @@ sys_get_mac_address(uint8_t* start) {
 }
 
 // If data is successfully received, returns the length and maps the received data at va
-// If given an invalid va, returns -E_INVAL
+// If given an invalid va (above UTOP or not page-aligned), returns -E_INVAL
 // If no packet is available, returns -E_NO_MEM
 int 
 sys_e1000_recv(void * va)
 {
+	if (((uintptr_t) va >= UTOP) || ((uintptr_t) va != PTE_ADDR(va))) {
+		return -E_INVAL;
+	}
 	return recv_data(va);
 }
 

@@ -71,8 +71,7 @@ send_data(void * start, int len, int eop)
 	if (!(transmit_buf[tail].status & E1000_TXSTAT_DD)) {
 		return -E_NO_MEM;
 	}
-	uint32_t pstart = ((* pgdir_walk(curenv->env_pgdir, start, 0)) 
-				& (~0xfff)) 
+	uint32_t pstart = PTE_ADDR(* pgdir_walk(curenv->env_pgdir, start, 0))
 			  + PGOFF(start);
 	transmit_buf[tail] = (struct e1000_tx_desc) {
 		.addr   = pstart, 
@@ -86,16 +85,13 @@ send_data(void * start, int len, int eop)
 
 
 // If data is successfully received, returns the length and maps the received data at va
-// If given an invalid va, returns -E_INVAL
 // If no packet is available, returns -E_NO_MEM
+// This function does no checking to ensure that the va is valid
 int 
 recv_data(void * va)
 {
 	#define tail (E_REG(E1000_RDT))
 	#define newtail ((E_REG(E1000_RDT) + 1) % E1000_RBUFCNT)
-	if ((uintptr_t) va >= UTOP) {
-		return -E_INVAL;
-	}
 	if (recv_buf[newtail].status & E1000_RXSTAT_DD){
 		page_insert(curenv->env_pgdir, 
 			    pa2page((physaddr_t) recv_buf[newtail].buffer_addr), 
